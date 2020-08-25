@@ -15,6 +15,8 @@ topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv")
 topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv")
 gt_class<-read.csv(file="sample_data/gt_topics_sample.csv")
 
+docs<-read.csv(file="sample_data/documents_sample.csv")
+
 ```
 
 ## Run Analysis
