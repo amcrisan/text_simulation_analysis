@@ -27,14 +27,15 @@
     * top_doc: *a string with the id to the documents, will match to document ID in documents*
 
 * Ground truth - *A table of ground truth classes*
-    * GT ID : *Unique identifier for ground truth class*
-    * Run ID : *Unique identifier for each run, links to the run table*
-    * GT Name : *the name of the class*
-    * Metric class accuracy : *A metric of ground truth class accuracy*
+    * gt_id: *Unique identifier for ground truth class*
+    * run_id : *Unique identifier for each run, links to the run table*
+    * category : *the name of the class*
+    * accuracy : *A metric of ground truth class accuracy*
+    * grp_size : *The size of the each ground truth class*
     
 
 * Documents - *Table of all documents and the topics they are assigned to*
-    * doc_id: *Unique identifier for each document, taken from the reuters dataset*
+    * doc_id: *Unique identifier for each document*
     * run_id : *Unique identifier for each run, links to run table*
     * gt_topic: *Unique identifier for the ground truth class, links to ground truth table*
     * topic_id: *Unique identifier for each topic, links to topics table*
