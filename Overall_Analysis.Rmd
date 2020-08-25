@@ -3,6 +3,7 @@ title: "Simulation Analysis"
 output: html_document
 ---
 
+Preliminary Exploratory Analysis that investiates the sample results from the 
 ```{r setup, include=FALSE}
 library(ggplot2)
 library(dplyr)
@@ -19,6 +20,32 @@ docs<-read.csv(file="sample_data/documents_sample.csv")
 
 ```
 
+Writing some wrapped metrics for philentropy calculations
+
+```{r}
+#generic function of handle calculation of jensen_shannon distance from matrix
+JS<-function(prob_matrix){
+    tmp<-apply(prob_matrix,1,function(x){
+      apply(prob_matrix,1,function(x,y){
+        jensen_shannon(x,y,testNA = FALSE, unit = "log2")
+      },x = x)
+    })
+    
+    return(tmp)
+}
+
+#generic function of handle calculation of cosine distance from matrix
+CS<-function(prob_matrix){
+    tmp<-apply(prob_matrix,1,function(x){
+      apply(prob_matrix,1,function(x,y){
+        cosine_dist(x,y,testNA = FALSE)
+      },x = x)
+    })
+    
+    return(tmp)
+}
+
+```
 ## Run Analysis
 
 Sumary of runs
@@ -106,11 +133,17 @@ heatmap(KLMatrix)
 ```
 ```{r}
 #gotta do this manually
-tst<-jensen_shannon(prob_matrix)
+JS_matrix<-JS(prob_matrix)
+heatmap(JS_matrix)
 ```
 
 ## Topic Document Analysis
 ```{r}
+CS_matrix<-CS(prob_matrix)
+heatmap(CS_matrix)
 ```
 
+```{r}
+
+```
 ## Document Analysis

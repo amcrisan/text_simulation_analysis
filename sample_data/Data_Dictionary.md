@@ -3,12 +3,12 @@
 
 * Runs - *Table of each run, with overall performance metrics*
     * run_id: *unique run identifier*
-    * action_type : *what the theoretical user action was
+    * action_type : *what the theoretical user action was*
     * action_impact : *where in the pipeline did the action trigger a re-running*
     * action_details : *A string of what exactly took place*
-    * action_details_short: *Md5sum of the action details string (makes life easier for filtering).
-    * metric : A categorical variable with the metrics that are stored
-    * metric_score : The value for the metric
+    * action_details_short: *Md5sum of the action details string (makes life easier for filtering)*.
+    * metric : *A categorical variable with the metrics that are stored*
+    * metric_score : *The value for the metric*
     
 
 * Topics Terms - *Table of all the topics and their top 100 words*
