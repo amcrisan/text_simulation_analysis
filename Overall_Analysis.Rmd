@@ -1,0 +1,114 @@
+---
+title: "Simulation Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(philentropy)
+library(tidyr)
+
+#load data
+runs<-read.csv(file="sample_data/runs_sample.csv")
+topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv")
+topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv")
+gt_class<-read.csv(file="sample_data/gt_topics_sample.csv")
+
+```
+
+## Run Analysis
+
+Sumary of runs
+
+```{r}
+runs %>%
+  dplyr::select(run_id,action_impact,action_type) %>%
+  distinct()
+```
+
+We can see how metrics change over individual runs
+```{r,fig.width=10,unit="in"}
+runs %>%
+  ggplot(aes(x=run_id,y=metric_score)) +
+  geom_bar(stat="identity",aes(fill = action_impact),color="grey")+
+  facet_grid(.~metric)+
+  theme_bw()+
+  scale_fill_brewer(palette = "Greys",direction=-1)+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+or all runs together
+```{r,fig.width=10,unit="in"}
+runs %>%
+  ggplot(aes(x=metric,y=metric_score)) +
+  geom_boxplot(outlier.alpha=0)+
+  geom_jitter(shape=21,size=4,aes(fill=action_impact),width=0.2,height=0)+
+  facet_grid(.~metric,scales = "free_x")+
+  scale_y_continuous(limits=c(0,1))+
+  theme_bw()+
+  scale_fill_brewer(palette = "Greys",direction=-1)+
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+We can also see the differences of metrics within an individual run:
+
+```{r,fig.width=10,unit="in"}
+runs %>%
+  ggplot(aes(x=metric,y=metric_score)) +
+  geom_bar(stat="identity",aes(fill = action_impact),color="grey")+
+  facet_grid(.~run_id)+
+  theme_bw()+
+  scale_fill_brewer(palette = "Greys",direction=-1)+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+What we can conclude is that individual metrics would measures the quality of the change differently. Accuracy is the most sentistive to changes, but f1 and fm1, which measure both repcision and accuracy is not. Metrics that look at the quality of the clustering, or in other terms, how similar documents to other documents assigned to the same topic. Compared to accuracy those metrics are far more stable and don't change very much even when the user makes from substantive changes.
+
+Why is that?
+
+The dataset that we are using has two very large classes and this seems to dominate both the algorithm's ability to select topics and the to assess their quality. This observations underscores the important relationship between the underlying structure of the data and the machine learning model. To some extent, hyper paramter tuning achieves very little.
+
+## Topic Term Analysis
+Many individuals are also interest in the quality of the topics, usually examined by looking closely at the distribution of terms within topics. We examine those here.
+
+First off, its easy to see that looking across the top terms from all runs quickly produces a visualization that is to visbly dense to parse. It might be worth comparing runs that have different extremes.
+
+```{r}
+topic_term %>%
+  filter(top_term_order<=10) %>% #select top ten terms only
+  ggplot(aes(y=top_term,x=run_id)) +
+  geom_tile() +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0),axis.text.y = element_blank())
+  
+```
+
+### Per run term similarity
+
+Here we compute the KL divergence within topics of a common run and also between runs.
+
+```{r}
+run_topics<-dplyr::filter(topic_term, run_id == '2912314e-a515-423') %>%
+  dplyr::select(topic_id,top_term,top_prob) %>%
+  tidyr::pivot_wider(names_from = top_term, values_from = top_prob) #values fill isn't work.. hmm
+
+run_topics[is.na(run_topics)]<-0 #shouldn't have to do this
+prob_matrix<-as.matrix(run_topics[,2:ncol(run_topics)])
+```
+
+#### KL Divergence
+```{r}
+KLMatrix<-KL(prob_matrix)
+heatmap(KLMatrix)
+```
+```{r}
+#gotta do this manually
+tst<-jensen_shannon(prob_matrix)
+```
+
+## Topic Document Analysis
+```{r}
+```
+
+## Document Analysis
