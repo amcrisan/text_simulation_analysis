@@ -95,10 +95,15 @@ function renderPanel(index, container){
   let topics = topicdata[index].values.slice(0,topicLimit);
   let tokens = tokendata[index].values.slice(0,topicLimit);
 
+  let maxTopicProb = d3.max(topics.map(d => d3.max(d.values.map(d=>d.top_doc_prob))));
+  let maxTokenProb = d3.max(tokens.map(d => d3.max(d.values.map(d=>d.top_prob))));
+  let topicScale = d3.scaleLinear().domain([0,maxTopicProb]);
+  let tokenScale = d3.scaleLinear().domain([0,maxTokenProb]);
+
   let w = parseInt(container.style("width"));
   let h = parseInt(container.style("height"));
 
-  let epsilonAlpha = 0.1
+  let epsilonAlpha = 0.2;
   let colorAlpha = d3.scaleLinear().range([epsilonAlpha,1]);
 
   let colors = d3.scaleOrdinal(d3.schemeTableau10);
@@ -109,27 +114,44 @@ function renderPanel(index, container){
 
   let headerData = (topics.map(d => d.key));
 
-  let table = container.selectAll("table").data([1]).enter().append("table");
+  let textTable = container.selectAll("#textTable").data([1]).enter().append("table").attr("id","textTable");
 
   //make one row per text, with an extra row for the header
-  let rows = d3.range(textLimit+1);
-  table.selectAll("tr").data(rows).enter().append("tr");
+  let textRows = d3.range(textLimit+1);
+  textTable.selectAll("tr").data(textRows).enter().append("tr");
 
   //header is first
-  table.select("tr").classed("tableHeader",true).selectAll("th").data(headerData).enter().append("th")
+  textTable.select("tr").classed("tableHeader",true).selectAll("th").data(headerData).enter().append("th")
     .text(d => d)
     .style("color", (d,i) => colors(i % 10));
 
   //now the other rows
-  table.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
+  textTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
     var rowData = d3.range(topicLimit).map(d => topics[d].values[i]);
     d3.select(this).selectAll("td").data(rowData).enter().append("td")
       .text(d => d.top_doc)
-      .style("color", (d,i) => d3.interpolate("white",colors(i % 10))(colorAlpha(d.top_doc_prob)));
+      .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(topicScale(d.top_doc_prob))));
   })
 
-  //TODO text by token matrix
+  //TODO text by token matrix, let's just use a table for now.
 
-  var svg = container.append(svg);
+  container.selectAll("br").data([1]).enter().append("br");
+
+  let wordTable = container.selectAll("#wordTable").data([1]).enter().append("table").attr("id","wordTable");
+
+  let wordRows = d3.range(tokenLimit+1);
+  wordTable.selectAll("tr").data(wordRows).enter().append("tr");
+
+  //same header as the previous table
+  wordTable.select("tr").classed("tableHeader",true).selectAll("th").data(headerData).enter().append("th")
+    .text(d => d)
+    .style("color", (d,i) => colors(i % 10));
+
+  wordTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
+      var rowData = d3.range(tokenLimit).map(d => tokens[d].values[i]);
+      d3.select(this).selectAll("td").data(rowData).enter().append("td")
+        .text(d => d.top_term)
+        .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob))));
+  })
 
 }
