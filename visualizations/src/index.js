@@ -117,13 +117,9 @@ function renderPanel(index, container){
   let topicCount = topiccounts[run_index].values.sort((a,b) => d3.descending(a.count,b.count));
 
   let topTopics = topicCount.map(d => d.topic_id).slice(0,topicLimit);
-  console.log(topTopics);
 
   let topics = topicdata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
   let tokens = tokendata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
-
-  console.log(topics);
-  console.log(tokens);
 
   let maxTopicProb = d3.max(topics.map(d => d3.max(d.values.map(d=>d.top_doc_prob))));
   let maxTokenProb = d3.max(tokens.map(d => d3.max(d.values.map(d=>d.top_prob))));
@@ -155,7 +151,7 @@ function renderPanel(index, container){
     .attr("y", d => histY(d.count))
     .attr("width", histX(1)-histX(0))
     .attr("height", d=> histY(0) - histY(d.count))
-    .style("fill", (d,i) => i<=topicLimit ? colors(i) : "#333");
+    .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333");
   //TODO topic by text view
 
 
