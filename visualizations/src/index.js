@@ -82,12 +82,9 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
           .key(d=> d['run_id'])
           .entries(topics);
 
-        /*topiccounts.forEach(function(run){
-          run.values = d3.nest()
-            .key(d => d['topic_id'])
-            .entries(run.values);
-        });
-        */
+      //I've already pre-pivoted this outside of the code,
+      //so no need to recursively pivot
+
       }
 
       render();
@@ -113,8 +110,20 @@ function renderHeader(container){
 function renderPanel(index, container){
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
-  let topics = topicdata[index].values.slice(0,topicLimit);
-  let tokens = tokendata[index].values.slice(0,topicLimit);
+
+  //not necessarily guaranteed that all of the runs are in the same order across tables
+  let run_id = topicdata[index].key;
+  let run_index = topiccounts.map(d=>d.key).indexOf(run_id);
+  let topicCount = topiccounts[run_index].values.sort((a,b) => d3.descending(a.count,b.count));
+
+  let topTopics = topicCount.map(d => d.topic_id).slice(0,topicLimit);
+  console.log(topTopics);
+
+  let topics = topicdata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
+  let tokens = tokendata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
+
+  console.log(topics);
+  console.log(tokens);
 
   let maxTopicProb = d3.max(topics.map(d => d3.max(d.values.map(d=>d.top_doc_prob))));
   let maxTokenProb = d3.max(tokens.map(d => d3.max(d.values.map(d=>d.top_prob))));
@@ -130,6 +139,23 @@ function renderPanel(index, container){
   let colors = d3.scaleOrdinal(d3.schemeTableau10);
   //TODO histogram view (or other corpus overview)
 
+  let histSVG = container.selectAll("svg").data([1]).enter().append("svg")
+    .attr("id","topicHistogram")
+    .classed("histogram","true");
+
+  let histH = parseInt(histSVG.style("height"));
+  let maxCount = d3.max(topicCount,d=>d.count);
+
+  let padding = 5;
+  let histX = d3.scaleLinear().domain([0,topicCount.length]).range([padding,w-padding])
+  let histY = d3.scaleLinear().domain([0,maxCount]).range([histH-padding,padding]);
+
+  histSVG.selectAll("rect").data(topicCount).enter().append("rect")
+    .attr("x", (d,i) => histX(i))
+    .attr("y", d => histY(d.count))
+    .attr("width", histX(1)-histX(0))
+    .attr("height", d=> histY(0) - histY(d.count))
+    .style("fill", (d,i) => i<=topicLimit ? colors(i) : "#333");
   //TODO topic by text view
 
 
