@@ -18,6 +18,7 @@ var textLimit = 5; //how many texts should we show at once?
 
 
 var topicdata;
+var topiccounts;
 var tokendata;
 
 var leftRun = 0;
@@ -58,7 +59,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
       d['top_prob'] = +d['top_prob'];
     });
 
-    if(words.length>0 && 'run_id' in topics[0]){
+    if(words.length>0 && 'run_id' in words[0]){
       tokendata = d3.nest()
           .key(d => d['run_id'])
           .entries(words);
@@ -70,7 +71,27 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
       });
     }
 
-    render();
+
+    d3.csv("./data/topics-by-count.csv").then(function(topics) {
+      topics.forEach(function(d){
+        d['count'] = +d['count'];
+      });
+
+      if(topics.length>0 && 'run_id' in topics[0]){
+        topiccounts = d3.nest()
+          .key(d=> d['run_id'])
+          .entries(topics);
+
+        /*topiccounts.forEach(function(run){
+          run.values = d3.nest()
+            .key(d => d['topic_id'])
+            .entries(run.values);
+        });
+        */
+      }
+
+      render();
+    });
   });
 });
 
