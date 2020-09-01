@@ -2,8 +2,13 @@
 title: "Simulation Analysis"
 output: html_document
 ---
+This document summarizes the analysis supporting our findings in the main paper text. It includes both the code, results, and our interpretation of the results. The contents of this document can be modified and run.
 
-Preliminary Exploratory Analysis that investiates the sample results from the 
+## Set up
+
+This section effectively setsup the analysis environment. It includes the different R packages used in the data, the data, and finally additional custom functions that have been written to support analysis.
+
+**Packages and Data**
 ```{r setup, include=FALSE}
 library(ggplot2)
 library(dplyr)
@@ -11,17 +16,18 @@ library(philentropy)
 library(tidyr)
 
 #load data
-runs<-read.csv(file="sample_data/runs_sample.csv")
-topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv")
-topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv")
-gt_class<-read.csv(file="sample_data/gt_topics_sample.csv")
-
-docs<-read.csv(file="sample_data/documents_sample.csv")
+runs<-read.csv(file="sample_data/runs_sample.csv",stringsAsFactors = FALSE)
+topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv",stringsAsFactors = FALSE)
+topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv",stringsAsFactors = FALSE)
+gt_class<-read.csv(file="sample_data/gt_topics_sample.csv",stringsAsFactors = FALSE)
+docs<-read.csv(file="sample_data/documents_sample.csv",stringsAsFactors = FALSE)
 
 ```
 
-Writing some wrapped metrics for philentropy calculations
 
+**Customized functions**
+
+Custom functions for quickly computing cosine and jensen shannon distances from a matrix of probabilities.
 ```{r}
 #generic function of handle calculation of jensen_shannon distance from matrix
 JS<-function(prob_matrix){
@@ -46,9 +52,46 @@ CS<-function(prob_matrix){
 }
 
 ```
-## Run Analysis
 
-Sumary of runs
+
+## Dataset overview
+
+We use the Reuters-21578 benchmark dataset to inspect the effects of user interactions with text analytics pipelines. The dataset has 10,788 documents that have been manually assigned to one or more topics of a possible set of 90 topics. We limit our analysis to documents that have only one topicassigned to them, which is 9,160 (84%) of all documents. These 9,160 documents are represent a subset of 65 of the initial 90 topics.
+
+The same set of documents and ground truth topics are used across multiple runs of the data. We use the data from a single run to visualizae the characteristics of the this dataset.
+```{r}
+#get data from a single run
+run_ids<-runs %>% select(run_id) %>% unique()
+tmp_gt<-gt_class %>% filter(run_id == run_ids$run_id[1])
+
+```
+
+
+**Size of ground truth datasets**
+
+There are a total of 65 'ground truth' topics in this dataset. They vary in size from `min(tmp_gt$grp_size)` to `max(tmp_gt$grp_size)`. There is a long tail, in the the majority of the documents belong to two topics.
+
+```{r}
+tmp_gt %>% 
+  ggplot(aes(x=reorder(category,-grp_size), y = grp_size)) +
+  geom_bar(stat="identity")+
+  theme_bw()+
+  labs(y="Total Number of Documents",x="Topic")+
+  theme(axis.text.x = element_text(angle = 90, hjust=1,vjust=0.5))
+```
+
+
+
+## Evaluations of User Interactions - Run Analysis
+
+A run here captures the changes to the output for our text analytics pipelines based upon one single user action.  We see the results according to three types of metrics:
+
+1) Benchmark metrics
+2) Cluster metrics
+3) Topic metrics.
+
+
+## Benchmark Metrics
 
 ```{r}
 runs %>%
@@ -98,7 +141,7 @@ Why is that?
 
 The dataset that we are using has two very large classes and this seems to dominate both the algorithm's ability to select topics and the to assess their quality. This observations underscores the important relationship between the underlying structure of the data and the machine learning model. To some extent, hyper paramter tuning achieves very little.
 
-## Topic Term Analysis
+### Topic Metrics
 Many individuals are also interest in the quality of the topics, usually examined by looking closely at the distribution of terms within topics. We examine those here.
 
 First off, its easy to see that looking across the top terms from all runs quickly produces a visualization that is to visbly dense to parse. It might be worth comparing runs that have different extremes.
