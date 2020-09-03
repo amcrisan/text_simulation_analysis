@@ -61,7 +61,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
         topiccounts = d3.group(topics, d=>d['run_id']);
       }
 
-      render();
+      setup();
     });
   });
 });
@@ -73,7 +73,24 @@ function render(){
   renderPanel(rightRun,d3.select("#rightModel"));
 }
 
-function renderPanel(index, container){
+function setup(){
+  setupPanel(leftRun,d3.select("#leftModel"));
+  setupPanel(rightRun,d3.select("#rightModel"));
+}
+
+function setupPanel(index,container){
+  //handle updates
+  container.select("select").on("change",function(e){
+    let owner = d3.select(this);
+    if(owner.attr("id")==="leftRun"){
+      leftRun = +owner.property("value");
+      renderPanel(leftRun,d3.select("#leftModel"));
+    }
+    else if(owner.attr("id")==="rightRun"){
+      rightRun = +owner.property("value");
+      renderPanel(rightRun,d3.select("#rightModel"));
+    }
+  });
 
   //Populate the dropdown
   let runs = Array.from(topicdata.keys());
@@ -83,23 +100,21 @@ function renderPanel(index, container){
     .attr("value",(d,i)=>i)
     .text(d=>d);
 
+  renderPanel(index,container);
+}
+
+function renderPanel(index, container){
+
+  //Populate the dropdown
+  let runs = Array.from(topicdata.keys());
+  let runEntry = runs[index];
+
   //initialize to the current selected run
-  options
+  container.select("select").selectAll("options")
     .attr("selected", (d,i) => i==index ? "selected" : null);
 
-  //handle updates
-  container.select("select").on("change",function(e){
-    let owner = d3.select(this);
-    if(owner.attr("id")==="leftRun"){
-      leftRun = owner.property("value");
-      renderPanel(leftRun,d3.select("#leftModel"));
-    }
-    else if(owner.attr("id")==="rightRun"){
-      rightRun = owner.property("value");
-      renderPanel(rightRun,d3.select("#rightModel"));
-    }
-  });
-
+  container.select("#title")
+    .text(runEntry);
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
 
@@ -135,10 +150,9 @@ function renderPanel(index, container){
   let colors = d3.scaleOrdinal(d3.schemeTableau10);
   //TODO histogram view (or other corpus overview)
 
-  let histSVG = container.selectAll("svg").data([1]).enter().append("svg")
-    .classed("histogram","true");
+  let histSVG = container.select("#histogram");
 
-  let histH = parseInt(container.select(".histogram").style("height"));
+  let histH = parseInt(histSVG.style("height"));
   let maxCount = d3.max(topicCount,d=>d.count);
 
   let padding = 5;
@@ -146,56 +160,95 @@ function renderPanel(index, container){
   let histY = d3.scaleLinear().domain([0,maxCount]).range([histH-padding,padding]);
 
   var histogram = histSVG.selectAll("rect")
-    .data(topicCount).enter().append("rect")
-        .attr("x", (d,i) => histX(i))
-        .attr("y", d => histY(d.count))
-        .attr("width", histX(1)-histX(0))
-        .attr("height", d=> histY(0) - histY(d.count))
-        .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333");
+    .data(topicCount, d=> d.run_id + d.topic_id)
+      .join(
+        enter => enter.append("rect")
+          .attr("x", (d,i) => histX(i))
+          .attr("y", d => histY(d.count))
+          .attr("width", histX(1)-histX(0))
+          .attr("height", d=> histY(0) - histY(d.count))
+          .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333"),
+        update => update
+          .attr("x", (d,i) => histX(i))
+          .attr("y", d => histY(d.count))
+          .attr("width", histX(1)-histX(0))
+          .attr("height", d=> histY(0) - histY(d.count))
+          .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333"),
+        exit => exit.remove()
+      );
 
-
-
-  let textTable = container.selectAll("#textTable").data([1]).enter().append("table").attr("id","textTable");
+  let textTable = container.select("#textTable");
 
   //make one row per text, with an extra row for the header
   let textRows = d3.range(textLimit+1);
+
+  //will never update, just need enter and exit
   textTable.selectAll("tr").data(textRows).enter().append("tr");
 
   //header is first
-  textTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys()).enter().append("th")
-    .classed("tableHeaderEntry",true)
-    .text(d => d)
-    .style("color", (d,i) => colors(i % 10));
+  textTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys(), d=>d)
+    .join(
+        enter => enter.append("th")
+        .classed("tableHeaderEntry",true)
+        .text(d => d)
+        .style("color", (d,i) => colors(i % 10)),
+        update => update
+        .text(d => d)
+        .style("color", (d,i) => colors(i % 10)),
+        exit => exit.remove()
+    );
 
   //now the other rows
   textTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
     var rowData = Array.from(topics.keys()).map(d => topics.get(d)[i]);
-    d3.select(this).selectAll("td").data(rowData).enter().append("td")
-      .text(d => d.top_doc)
-      .classed("textTableEntry","true")
-      .style("color", (d,i) => d3.interpolateLab("white",colors((i % topicLimit) % 10))(colorAlpha(topicScale(d.top_doc_prob))));
+    d3.select(this).selectAll("td").data(rowData, d=> d.run_id + d.top_doc)
+      .join(
+        enter => enter.append("td")
+          .text(d => d.top_doc)
+          .classed("textTableEntry","true")
+          .style("color", (d,i) => d3.interpolateLab("white",colors((i % topicLimit) % 10))(colorAlpha(topicScale(d.top_doc_prob)))),
+        update => update
+          .text(d => d.top_doc)
+          .style("color", (d,i) => d3.interpolateLab("white",colors((i % topicLimit) % 10))(colorAlpha(topicScale(d.top_doc_prob)))),
+        exit => exit.remove()
+      );
+
   })
 
   //TODO text by token matrix, let's just use a table for now.
 
-  container.selectAll("br").data([1]).enter().append("br");
-
-  let wordTable = container.selectAll("#wordTable").data([1]).enter().append("table").attr("id","wordTable");
+  let wordTable = container.select("#wordTable");
 
   let wordRows = d3.range(tokenLimit+1);
   wordTable.selectAll("tr").data(wordRows).enter().append("tr");
 
   //same header as the previous table
-  wordTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys()).enter().append("th")
-    .classed("tableHeaderEntry",true)
-    .text(d => d)
-    .style("color", (d,i) => colors(i % 10));
+  wordTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys(), d=>d)
+    .join(
+        enter => enter.append("th")
+        .classed("tableHeaderEntry",true)
+        .text(d => d)
+        .style("color", (d,i) => colors(i % 10)),
+        update => update
+        .text(d => d)
+        .style("color", (d,i) => colors(i % 10)),
+        exit => exit.remove()
+    );
 
   wordTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
       var rowData = Array.from(topics.keys()).map(d => tokens.get(d)[i]);
-      d3.select(this).selectAll("td").data(rowData).enter().append("td")
-        .text(d => d.top_term)
-        .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob))));
+      d3.select(this).selectAll("td").data(rowData)
+      d3.select(this).selectAll("td").data(rowData, d=> d.run_id + d.top_doc)
+        .join(
+          enter => enter.append("td")
+            .text(d => d.top_term)
+            .classed("wordTableEntry","true")
+            .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob)))),
+          update => update
+            .text(d => d.top_term)
+            .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob)))),
+          exit => exit.remove()
+        );
   })
 
 }
