@@ -148,7 +148,8 @@ function renderPanel(index, container){
   let colorAlpha = d3.scaleLinear().range([epsilonAlpha,1]);
 
   let colors = d3.scaleOrdinal(d3.schemeTableau10);
-  //TODO histogram view (or other corpus overview)
+
+  //DRAW HISTOGRAM
 
   let histSVG = container.select("#histogram");
 
@@ -176,6 +177,9 @@ function renderPanel(index, container){
           .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333"),
         exit => exit.remove()
       );
+
+
+  //MAKE TOP TEXTS BY TOPIC TABLE
 
   let textTable = container.select("#textTable");
 
@@ -215,7 +219,7 @@ function renderPanel(index, container){
 
   })
 
-  //TODO text by token matrix, let's just use a table for now.
+  //MAKE TOP TOKENS BY TOPIC TABLE
 
   let wordTable = container.select("#wordTable");
 
