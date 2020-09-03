@@ -36,21 +36,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
   });
 
   if(topics.length>0 && 'run_id' in topics[0]){
-    topicdata = d3.nest()
-        .key(d => d['run_id'])
-        .entries(topics);
-
-    topicdata.forEach(function(run){
-      //note that this well give us 100 documents per topic, which may or may not
-      //be mutually exclusive amongst topics. Really we'd want to either:
-      // a) load in the big documents csv and find all the assignments
-      // b) do the "assignments" here, since we have the top docs across each document,
-      //    so it's just a check to see where this document has the highest score.
-      //    but for our vis I think we're okay.
-        run.values = d3.nest()
-          .key(d => d['topic_id'])
-          .entries(run.values);
-    });
+    topicdata = d3.group(topics, d=>d.run_id, d=>d.topic_id);
   }
 
   d3.csv("./data/words-by-topics.csv").then(function(words) {
@@ -60,15 +46,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
     });
 
     if(words.length>0 && 'run_id' in words[0]){
-      tokendata = d3.nest()
-          .key(d => d['run_id'])
-          .entries(words);
-
-      tokendata.forEach(function(run){
-        run.values = d3.nest()
-          .key(d => d['topic_id'])
-          .entries(run.values);
-      });
+      tokendata = d3.group(words, d=> d.run_id, d=>d.topic_id);
     }
 
 
@@ -77,14 +55,10 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
         d['count'] = +d['count'];
       });
 
-      if(topics.length>0 && 'run_id' in topics[0]){
-        topiccounts = d3.nest()
-          .key(d=> d['run_id'])
-          .entries(topics);
-
       //I've already pre-pivoted this outside of the code,
       //so no need to recursively pivot
-
+      if(topics.length>0 && 'run_id' in topics[0]){
+        topiccounts = d3.group(topics, d=>d['run_id']);
       }
 
       render();
@@ -95,34 +69,60 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
 //VISUALIZING
 
 function render(){
-  renderHeader(d3.select("#ui"));
   renderPanel(leftRun,d3.select("#leftModel"));
   renderPanel(rightRun,d3.select("#rightModel"));
 }
 
-function renderHeader(container){
-  //TODO: dropdowns for selecting runs
-  //TODO: textual summary of the runs
-  //TODO: textual summary of run comparison
-
-}
-
 function renderPanel(index, container){
+
+  //Populate the dropdown
+  let runs = Array.from(topicdata.keys());
+  let runEntry = runs[index];
+
+  var options = container.select("select").selectAll("option").data(runs).enter().append("option")
+    .attr("value",(d,i)=>i)
+    .text(d=>d);
+
+  //initialize to the current selected run
+  options
+    .attr("selected", (d,i) => i==index ? "selected" : null);
+
+  //handle updates
+  container.select("select").on("change",function(e){
+    let owner = d3.select(this);
+    if(owner.attr("id")==="leftRun"){
+      leftRun = owner.property("value");
+      renderPanel(leftRun,d3.select("#leftModel"));
+    }
+    else if(owner.attr("id")==="rightRun"){
+      rightRun = owner.property("value");
+      renderPanel(rightRun,d3.select("#rightModel"));
+    }
+  });
+
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
 
   //not necessarily guaranteed that all of the runs are in the same order across tables
-  let run_id = topicdata[index].key;
-  let run_index = topiccounts.map(d=>d.key).indexOf(run_id);
-  let topicCount = topiccounts[run_index].values.sort((a,b) => d3.descending(a.count,b.count));
-
+  let topicCount = topiccounts.get(runEntry).sort((a,b) => d3.descending(a.count,b.count));
   let topTopics = topicCount.map(d => d.topic_id).slice(0,topicLimit);
 
-  let topics = topicdata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
-  let tokens = tokendata[index].values.filter(d => topTopics.indexOf(d.key)>=0);
+  let topics = new Map();
+  let tokens = new Map();
+  for(const t of topTopics){
+    topics.set(t,topicdata.get(runEntry).get(t));
+    tokens.set(t,tokendata.get(runEntry).get(t));
+  }
 
-  let maxTopicProb = d3.max(topics.map(d => d3.max(d.values.map(d=>d.top_doc_prob))));
-  let maxTokenProb = d3.max(tokens.map(d => d3.max(d.values.map(d=>d.top_prob))));
+  //for now, let's choose the top n highest probability words per topic as the ones of
+  //interest:
+  //this might be totally uninteresting since we can't guarantee
+  // we have entries for all tokens
+  //let topTokens = tokens.map(d => d3.greatest(d.values, (a,b) => d3.descending(a.top_prob,b.top_prob))).map(d => d.top_term);
+
+  let maxTopicProb = d3.max(Array.from(topics).map(d=>d3.max(d[1].map(d => d.top_doc_prob))));
+
+  let maxTokenProb = d3.max(Array.from(tokens).map(d=>d3.max(d[1].map(d => d.top_prob))));
   let topicScale = d3.scaleLinear().domain([0,maxTopicProb]);
   let tokenScale = d3.scaleLinear().domain([0,maxTokenProb]);
 
@@ -136,26 +136,24 @@ function renderPanel(index, container){
   //TODO histogram view (or other corpus overview)
 
   let histSVG = container.selectAll("svg").data([1]).enter().append("svg")
-    .attr("id","topicHistogram")
     .classed("histogram","true");
 
-  let histH = parseInt(histSVG.style("height"));
+  let histH = parseInt(container.select(".histogram").style("height"));
   let maxCount = d3.max(topicCount,d=>d.count);
 
   let padding = 5;
   let histX = d3.scaleLinear().domain([0,topicCount.length]).range([padding,w-padding])
   let histY = d3.scaleLinear().domain([0,maxCount]).range([histH-padding,padding]);
 
-  histSVG.selectAll("rect").data(topicCount).enter().append("rect")
-    .attr("x", (d,i) => histX(i))
-    .attr("y", d => histY(d.count))
-    .attr("width", histX(1)-histX(0))
-    .attr("height", d=> histY(0) - histY(d.count))
-    .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333");
-  //TODO topic by text view
+  var histogram = histSVG.selectAll("rect")
+    .data(topicCount).enter().append("rect")
+        .attr("x", (d,i) => histX(i))
+        .attr("y", d => histY(d.count))
+        .attr("width", histX(1)-histX(0))
+        .attr("height", d=> histY(0) - histY(d.count))
+        .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333");
 
 
-  let headerData = (topics.map(d => d.key));
 
   let textTable = container.selectAll("#textTable").data([1]).enter().append("table").attr("id","textTable");
 
@@ -164,16 +162,18 @@ function renderPanel(index, container){
   textTable.selectAll("tr").data(textRows).enter().append("tr");
 
   //header is first
-  textTable.select("tr").classed("tableHeader",true).selectAll("th").data(headerData).enter().append("th")
+  textTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys()).enter().append("th")
+    .classed("tableHeaderEntry",true)
     .text(d => d)
     .style("color", (d,i) => colors(i % 10));
 
   //now the other rows
   textTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
-    var rowData = d3.range(topicLimit).map(d => topics[d].values[i]);
+    var rowData = Array.from(topics.keys()).map(d => topics.get(d)[i]);
     d3.select(this).selectAll("td").data(rowData).enter().append("td")
       .text(d => d.top_doc)
-      .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(topicScale(d.top_doc_prob))));
+      .classed("textTableEntry","true")
+      .style("color", (d,i) => d3.interpolateLab("white",colors((i % topicLimit) % 10))(colorAlpha(topicScale(d.top_doc_prob))));
   })
 
   //TODO text by token matrix, let's just use a table for now.
@@ -186,12 +186,13 @@ function renderPanel(index, container){
   wordTable.selectAll("tr").data(wordRows).enter().append("tr");
 
   //same header as the previous table
-  wordTable.select("tr").classed("tableHeader",true).selectAll("th").data(headerData).enter().append("th")
+  wordTable.select("tr").classed("tableHeader",true).selectAll("th").data(topics.keys()).enter().append("th")
+    .classed("tableHeaderEntry",true)
     .text(d => d)
     .style("color", (d,i) => colors(i % 10));
 
   wordTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
-      var rowData = d3.range(tokenLimit).map(d => tokens[d].values[i]);
+      var rowData = Array.from(topics.keys()).map(d => tokens.get(d)[i]);
       d3.select(this).selectAll("td").data(rowData).enter().append("td")
         .text(d => d.top_term)
         .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob))));

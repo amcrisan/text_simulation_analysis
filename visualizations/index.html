@@ -2,40 +2,34 @@
 <html>
 <head>
   <title>Topic Model Comparison</title>
-  <script src="https://cdn.jsdelivr.net/npm/d3@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-array@2.7.1"></script>
   <script src="./src/index.js"></script>
 
   <style>
 
     .container{
-        max-width: 1200px;
-    }
-
-    .top{
-      width: 100%;
-      padding-left: 15px;
-      padding-right: 15px;
-      padding-top: 5px;
-      padding bottom: 10px;
-      height: 15%;
+        max-width: 80%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
     }
 
     .left{
-      float:left;
       width: 50%;
-      height: 80%;
 
     }
 
     .right{
-      float:right;
       width: 50%;
-      height: 80%;
     }
 
     .panel{
       width: 100%;
       height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .histogram{
@@ -47,9 +41,22 @@
 
 <body>
   <div id="container" class="container">
-    <div id="ui" class="top"></div>
-    <div id="leftModel" class="left"></div>
-    <div id="rightModel" class="right"></div>
+    <div id="leftModel" class="left">
+      <div id="panelUI" class="panelUI">
+        <label for="leftRun">Choose a run:</label>
+        <select name="leftRun" id="leftRun">
+        </select>
+      </div>
+
+
+    </div>
+    <div id="rightModel" class="right">
+      <div id="panelUI" class="panelUI">
+        <label for="rightRun">Choose a run:</label>
+        <select name="rightRun" id="rightRun">
+        </select>
+      </div>
+    </div>
   </div>
 </body>
 
