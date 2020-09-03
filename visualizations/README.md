@@ -20,7 +20,7 @@ We want to compare two *runs* of a topic modeller, or (equivalently), the *state
 2. **Matrix view of texts by topic**. For a subset of topics we might want a *list* of top documents in particular topics. Right now this is a just a list of lists (I could make this a radial layout or something, but none of our metrics care about that particular layout choice). This *could* be a matrix like below, but defining "most important texts" across the whole corpus (in the same way we could define top tokens) seems iffy.
 3. **Matrix view of tokens by topic**. Here I'm specifically thinking of a termite-style matrix of top terms (defined at the *corpus* level, through tf-idf or other standard metrics), and their relevance across a subset of topics.
 
-##Data needed:
+## Data needed:
 1. **runs_sample** (called *run-data.csv* in the current code): what runs are in this data, and what did we do each run?
 2. **pred_topics_docs_sample.csv** (called *topics-by-texts.csv* in the current code): what are the top docs for each topic, for each run?
 3. **pred_topics_terms_sample.csv** (called *words-by-topics.csv*): what are the top words for each topic, for each run?
