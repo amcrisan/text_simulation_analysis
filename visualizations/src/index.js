@@ -10,6 +10,8 @@ That is, we:
 // TODO: corpus-wide measures (for instance, the "top terms"
 // so we can fill out the matrix)
 
+// TODO: "Friendlier" topic run labels.
+
 
 //GLOBALS
 var tokenLimit = 5; //how many tokens should we show at once?
@@ -20,6 +22,7 @@ var textLimit = 5; //how many texts should we show at once?
 var topicdata;
 var topiccounts;
 var tokendata;
+var runsdata;
 
 var leftRun = 0;
 var rightRun = 1;
@@ -61,7 +64,11 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
         topiccounts = d3.group(topics, d=>d['run_id']);
       }
 
-      setup();
+      d3.csv("./data/runs_sample.csv").then(function (runs){
+        runsdata = d3.group(runs, d=> d.run_id);
+
+        setup();
+      });
     });
   });
 });
@@ -127,7 +134,7 @@ function renderPanel(index, container){
     .attr("selected", (d,i) => i==index ? "selected" : null);
 
   container.select("#title")
-    .text(runEntry);
+    .text(runEntry+":" + runsdata.get(runEntry)[0].action_type);
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
 
@@ -299,5 +306,7 @@ function renderPanel(index, container){
       exit => exit.remove()
 
     );
+
+  //TODO MAKE TERM/TOPIC MATRIX
 
 }
