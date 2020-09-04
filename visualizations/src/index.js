@@ -316,11 +316,11 @@ function renderPanel(index, container){
 
   //TODO MAKE TERM/TOPIC MATRIX
   //Let's choose the terms that show up most frequently in all
-  //of the top 100 terms for the run for now.
+  //of the top 100 terms for the top topics for now.
 
 
   let allTokens = [];
-  tokendata.get(runEntry).forEach(function(val,key){
+  tokens.forEach(function(val,key){
     allTokens = allTokens.concat(val.map(d=>d.top_term));
   });
 
