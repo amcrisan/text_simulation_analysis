@@ -100,6 +100,19 @@ function setupPanel(index,container){
     .attr("value",(d,i)=>i)
     .text(d=>d);
 
+  //Add an svg group
+
+  let arcSVG = container.select("#coxcomb");
+
+  let coxW = parseInt(arcSVG.style("width"));
+  let coxH = Math.max(coxW,parseInt(arcSVG.style("height")));
+  coxW = Math.max(coxW,coxH);
+
+  arcSVG.append("g")
+    .attr("id","coxcombG")
+    .classed("coxcombG",true)
+    .attr("transform","translate("+(coxW/2)+","+(coxW/2)+")");
+
   renderPanel(index,container);
 }
 
@@ -255,4 +268,38 @@ function renderPanel(index, container){
         );
   })
 
+  //MAKE COXCOMB OVERVIEW
+  let arcSVG = container.select("#coxcomb");
+
+  let coxW = parseInt(arcSVG.style("width"));
+  let coxH = Math.max(coxW,parseInt(arcSVG.style("height")));
+  coxW = Math.max(coxW,coxH);
+
+  let numDocs = d3.sum(topicCount,d=>d.count);
+
+  let radiusScale = d3.scaleLinear().domain([0,maxCount]).range([0,coxW/2]);
+  let angleScale = d3.scaleLinear().domain([0,numDocs]).range([0,2*Math.PI]);
+
+  let runningSum = i => d3.sum(topicCount.slice(0,i), d=> d.count);
+
+  arc = d3.arc()
+    .innerRadius(0)
+    .outerRadius(d => radiusScale(d.count))
+    .startAngle((d,i) => angleScale(runningSum(i)))
+    .endAngle((d,i) => angleScale(runningSum(i)+d.count));
+
+  arcSVG.select("g").selectAll("path").data(topicCount, d=> d.run_id + d.topic_id)
+    .join(
+      enter => enter.append("path")
+        .attr("d",arc)
+        .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333"),
+      update => update
+        .attr("d",arc)
+        .style("fill", (d,i) => i<topicLimit ? colors(i) : "#333"),
+      exit => exit.remove()
+
+    );
+
 }
+
+var arc;
