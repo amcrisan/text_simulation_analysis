@@ -318,7 +318,6 @@ function renderPanel(index, container){
   //Let's choose the terms that show up most frequently in all
   //of the top 100 terms for the top topics for now.
 
-
   let allTokens = [];
   tokens.forEach(function(val,key){
     allTokens = allTokens.concat(val.map(d=>d.top_term));
