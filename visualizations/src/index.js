@@ -12,7 +12,7 @@ That is, we:
 
 
 //GLOBALS
-var tokenLimit = 5; //how many tokens should we show at once?
+var tokenLimit = 10; //how many tokens should we show at once?
 var topicLimit = 5; //how many topics should we show at once?
 var textLimit = 5; //how many texts should we show at once?
 
@@ -118,6 +118,15 @@ function setupPanel(index,container){
     .classed("coxcombG",true)
     .attr("transform","translate("+(coxW/2)+","+(coxW/2)+")");
 
+
+  container.select("#matrix").append("g")
+    .attr("id","vG")
+    .classed("vG",true);
+
+  container.select("#matrix").append("g")
+    .attr("id","hG")
+    .classed("hG",true);
+
   renderPanel(index,container);
 }
 
@@ -212,10 +221,10 @@ function renderPanel(index, container){
     .join(
         enter => enter.append("th")
         .classed("tableHeaderEntry",true)
-        .text(d => d)
+        .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
         .style("color", (d,i) => colors(i % 10)),
         update => update
-        .text(d => d)
+        .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
         .style("color", (d,i) => colors(i % 10)),
         exit => exit.remove()
     );
@@ -249,10 +258,10 @@ function renderPanel(index, container){
     .join(
         enter => enter.append("th")
         .classed("tableHeaderEntry",true)
-        .text(d => d)
+        .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
         .style("color", (d,i) => colors(i % 10)),
         update => update
-        .text(d => d)
+        .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
         .style("color", (d,i) => colors(i % 10)),
         exit => exit.remove()
     );
@@ -306,5 +315,140 @@ function renderPanel(index, container){
     );
 
   //TODO MAKE TERM/TOPIC MATRIX
+  //Let's choose the terms that show up most frequently in all
+  //of the top 100 terms for the run for now.
 
+
+  let allTokens = [];
+  tokendata.get(runEntry).forEach(function(val,key){
+    allTokens = allTokens.concat(val.map(d=>d.top_term));
+  });
+
+  //I could probably do this in just one reduce, but humor me for now
+  let sharedTokensObj = allTokens.reduce(function(obj, b) {
+  obj[b] = ++obj[b] || 1;
+  return obj;
+  }, {});
+
+  let sharedTokensArray = [];
+  for(var token in sharedTokensObj){
+    sharedTokensArray.push({"token": token, "count": sharedTokensObj[token]});
+  }
+
+  sharedTokensArray.sort((a,b) => d3.descending(a.count,b.count));
+  let topSharedTokens = sharedTokensArray.splice(0,tokenLimit).map(d=>d.token);
+
+  var matrixSVG = container.select("#matrix");
+
+  let mW = parseInt(matrixSVG.style("width"));
+  let mH = parseInt(matrixSVG.style("height"));
+
+  let mx = d3.scaleBand().domain(d3.range(-2,topicLimit)).range([0,mW]).paddingInner(0.1);
+  let my = d3.scaleBand().domain(d3.range(-2,tokenLimit)).range([0,mH]).paddingInner(0.1);
+
+  //make vertical gridLines
+  matrixSVG.select("#vG").selectAll("line").data(d3.range(topicLimit),d=>d)
+    .join(
+      enter => enter.append("line")
+        .attr("x1",d=> mx(d))
+        .attr("x2",d=> mx(d))
+        .attr("y1",my(-1))
+        .attr("y2",my(tokenLimit-1))
+        .attr("stroke","#333")
+        .attr("stroke-width",2),
+      update => update
+        .attr("x1",d=> mx(d))
+        .attr("x2",d=> mx(d))
+        .attr("y1",my(-1))
+        .attr("y2",my(tokenLimit-1))
+        .attr("stroke","#333")
+        .attr("stroke-width",2),
+      exit => exit.remove()
+    );
+
+  //make topic labels
+  matrixSVG.select("#vG").selectAll("text").data(topics.keys(),d=>d).join(
+    enter => enter.append("text")
+      .attr("x",(d,i) => mx(i))
+      .attr("y",my(-1)-padding)
+      .attr("text-anchor","middle")
+      .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
+      .attr("fill",(d,i) => colors(i % 10)),
+    update => update
+      .attr("x",(d,i) => mx(i))
+      .attr("y",my(-1)-padding)
+      .text(d => !d.match(/TOPIC.*/) ? d : d.match(/TOPIC.*/)[0])
+      .attr("fill",(d,i) => colors(i % 10)),
+    exit => exit.remove()
+  );
+
+
+  //make horizontal gridLines
+  matrixSVG.select("#hG").selectAll("line").data(d3.range(tokenLimit),d=>d)
+    .join(
+      enter => enter.append("line")
+        .attr("x1",mx(-1))
+        .attr("x2",mx(topicLimit-1))
+        .attr("y1",d=> my(d))
+        .attr("y2",d=> my(d))
+        .attr("stroke","#333")
+        .attr("stroke-width",2),
+      update => update
+        .attr("x1",mx(-1))
+        .attr("x2",mx(topicLimit-1))
+        .attr("y1",d=> my(d))
+        .attr("y2",d=> my(d))
+        .attr("stroke","#333")
+        .attr("stroke-width",2),
+      exit => exit.remove()
+    );
+
+    //make text labels
+    matrixSVG.select("#hG").selectAll("text").data(topSharedTokens,d=>d).join(
+      enter => enter.append("text")
+        .attr("x",mx(-1)-padding)
+        .attr("y",(d,i) => my(i))
+        .attr("alignment-baseline","middle")
+        .attr("text-anchor","end")
+        .text(d => d)
+        .attr("fill","#333"),
+      update => update
+        .attr("x",mx(-1)-padding)
+        .attr("y",(d,i) => my(i))
+        .text(d => d),
+      exit => exit.remove()
+    );
+
+    //make circles
+    let circleData = [];
+    //rather than call d3.max on the nested array, let's just find the max as we build
+    let maxTopTokenProb = 0;
+
+    Array.from(topics.keys()).forEach(function(topic,i){
+      let row = [];
+      topSharedTokens.forEach(function(token,j){
+        let foundProb = tokens.get(topic).find(d=> d.top_term === token);
+        let prob = foundProb ? foundProb.top_prob : 0;
+        maxTopTokenProb = Math.max(maxTopTokenProb,prob);
+        circleData.push({"col": i, "row": j, "topic": topic, "token": token, "prob":prob});
+      });
+    });
+
+    let r = d3.scaleLinear().domain([0,maxTopTokenProb]).range([0,my.bandwidth()/2]);
+
+    matrixSVG.selectAll("circle").data(circleData).join(
+      enter => enter.append("circle")
+        .attr("cx",d=>mx(d.col))
+        .attr("cy",d=>my(d.row))
+        .attr("r",d=>r(d.prob))
+        .attr("fill",d=>colors(d.col % 10))
+        .attr("stroke","#333"),
+      update => update
+        .attr("cx",d=>mx(d.col))
+        .attr("cy",d=>my(d.row))
+        .attr("r",d=>r(d.prob))
+        .attr("fill",d=>colors(d.col % 10))
+        .attr("stroke","#333"),
+      exit => exit.remove()
+    );
 }
