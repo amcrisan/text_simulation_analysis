@@ -10,8 +10,6 @@ That is, we:
 // TODO: corpus-wide measures (for instance, the "top terms"
 // so we can fill out the matrix)
 
-// TODO: "Friendlier" topic run labels.
-
 
 //GLOBALS
 var tokenLimit = 5; //how many tokens should we show at once?
@@ -134,7 +132,7 @@ function renderPanel(index, container){
     .attr("selected", (d,i) => i==index ? "selected" : null);
 
   container.select("#title")
-    .text(runEntry+":" + runsdata.get(runEntry)[0].action_type);
+    .text(runEntry+": " + runsdata.get(runEntry)[0].action_type);
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
 
