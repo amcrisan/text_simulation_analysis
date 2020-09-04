@@ -171,7 +171,7 @@ function renderPanel(index, container){
   let w = parseInt(container.style("width"));
   let h = parseInt(container.style("height"));
 
-  let epsilonAlpha = 0.2;
+  let epsilonAlpha = 0.5;
   let colorAlpha = d3.scaleLinear().range([epsilonAlpha,1]);
 
   let colors = d3.scaleOrdinal(d3.schemeTableau10);
