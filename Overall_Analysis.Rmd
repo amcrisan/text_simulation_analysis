@@ -14,6 +14,10 @@ library(ggplot2)
 library(dplyr)
 library(philentropy)
 library(tidyr)
+library(ggthemes)
+library(forcats)
+library(treemapify)
+library(cowplot)
 
 #load data
 runs<-read.csv(file="sample_data/runs_sample.csv",stringsAsFactors = FALSE)
@@ -22,7 +26,18 @@ topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv",stringsAsFact
 gt_class<-read.csv(file="sample_data/gt_topics_sample.csv",stringsAsFactors = FALSE)
 docs<-read.csv(file="sample_data/documents_sample.csv",stringsAsFactors = FALSE)
 
+
+#data prep
+docs$assign_ind<-apply(docs[,c("topic_id","topic_assigned")], 1, function(x){
+    if(x[1]==x[2]){
+      return(1)
+    }else{
+      return(0)
+    }
+})
+
 ```
+
 
 
 **Customized functions**
@@ -58,12 +73,16 @@ CS<-function(prob_matrix){
 
 We use the Reuters-21578 benchmark dataset to inspect the effects of user interactions with text analytics pipelines. The dataset has 10,788 documents that have been manually assigned to one or more topics of a possible set of 90 topics. We limit our analysis to documents that have only one topicassigned to them, which is 9,160 (84%) of all documents. These 9,160 documents are represent a subset of 65 of the initial 90 topics.
 
-The same set of documents and ground truth topics are used across multiple runs of the data. We use the data from a single run to visualizae the characteristics of the this dataset.
+The same set of documents and ground truth topics are used across multiple runs of the data. We use the data from a single run to visualize the characteristics of the this dataset.
 ```{r}
 #get data from a single run
 run_ids<-runs %>% select(run_id) %>% unique()
 tmp_gt<-gt_class %>% filter(run_id == run_ids$run_id[1])
 
+min(tmp_gt$grp_size)
+max(tmp_gt$grp_size)
+
+print(run_ids)
 ```
 
 
@@ -78,8 +97,20 @@ tmp_gt %>%
   theme_bw()+
   labs(y="Total Number of Documents",x="Topic")+
   theme(axis.text.x = element_text(angle = 90, hjust=1,vjust=0.5))
+
+ggsave("output/gt_topic_distribution.png",dpi= 300)
 ```
 
+
+## User Interactions
+
+A summary of user interactions that we simulated :
+
+```{r}
+runs %>%
+  dplyr::select(action_impact,action_type) %>%
+  distinct()
+```
 
 
 ## Evaluations of User Interactions - Run Analysis
@@ -90,38 +121,30 @@ A run here captures the changes to the output for our text analytics pipelines b
 2) Cluster metrics
 3) Topic metrics.
 
-
 ## Benchmark Metrics
 
-```{r}
+```{r, fig.height=5,fig.width=10 }
+samp_runs<-runs %>%
+  group_by(action_impact,action_type,run_id) %>% 
+  do(sample_n(.,1)) %>%
+  ungroup()
+
 runs %>%
-  dplyr::select(run_id,action_impact,action_type) %>%
-  distinct()
+  #filter(metric !="silhouette_overall") %>%
+  ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
+  geom_boxplot(aes(fill=action_impact))+
+  facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
+  labs(x= "Metric Score", y = "")+
+  theme_bw()+
+  scale_x_continuous(limits=c(0,1))+
+  scale_fill_brewer(palette = "Greys",name="Action Impact")+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
+        legend.position="bottom")
+
+ggsave("output/benchmark_metrics_overall.png",dpi= 300)
+
 ```
 
-We can see how metrics change over individual runs
-```{r,fig.width=10,unit="in"}
-runs %>%
-  ggplot(aes(x=run_id,y=metric_score)) +
-  geom_bar(stat="identity",aes(fill = action_impact),color="grey")+
-  facet_grid(.~metric)+
-  theme_bw()+
-  scale_fill_brewer(palette = "Greys",direction=-1)+
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5))
-```
-
-or all runs together
-```{r,fig.width=10,unit="in"}
-runs %>%
-  ggplot(aes(x=metric,y=metric_score)) +
-  geom_boxplot(outlier.alpha=0)+
-  geom_jitter(shape=21,size=4,aes(fill=action_impact),width=0.2,height=0)+
-  facet_grid(.~metric,scales = "free_x")+
-  scale_y_continuous(limits=c(0,1))+
-  theme_bw()+
-  scale_fill_brewer(palette = "Greys",direction=-1)+
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-```
 
 We can also see the differences of metrics within an individual run:
 
@@ -186,7 +209,58 @@ CS_matrix<-CS(prob_matrix)
 heatmap(CS_matrix)
 ```
 
-```{r}
-
-```
 ## Document Analysis
+
+## Ground Truth Analysis
+```{r,echo=FALSE,include=FALSE}
+assign_tree<-function(dat = NULL,run_info=NULL){
+
+  total_grp_docs<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind==1)%>%
+    dplyr::select(doc_id,topic_assigned,gt_topic) %>%
+    distinct() %>%
+    group_by(topic_assigned,gt_topic) %>%
+    count()
+  
+  
+  grp_prob<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind == 1) %>%
+    group_by(topic_assigned,gt_topic) %>%
+    summarise(avg = median(topic_prob))
+  
+  
+  p<-left_join(total_grp_docs, grp_prob) %>%
+    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
+      geom_treemap()+
+      scale_fill_gradient(high = "#132B43",low="#56B1F7",limits=c(0,1),name="Median Assignment Probability")+
+      geom_treemap_subgroup_border(color="white")+
+      geom_treemap_text(aes(label=gt_topic), color="black")+
+      theme_bw()+
+      theme(legend.position="bottom")
+  
+  return(p)
+}
+  
+```
+
+
+```{r}
+max_run<-runs %>%
+  filter(metric == "accuracy_overall") %>%
+  slice(which.max(metric_score))
+
+min_runs<-runs %>%
+  filter(metric == "accuracy_overall") %>%
+  slice(which.min(metric_score))
+
+p1<-assign_tree(docs,max_run$run_id)
+p2<-assign_tree(docs,min_runs$run_id)
+```
+
+```{r}
+tree_together<-cowplot::plot_grid(p1,p2)
+save_plot("./output/treemap_comparison.pdf", tree_together, base_height=5,base_asp=1.1, ncol = 2,dpi=300)
+```
+
