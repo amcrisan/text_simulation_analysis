@@ -282,7 +282,7 @@ function renderPanel(index, container){
 
   let runningSum = i => d3.sum(topicCount.slice(0,i), d=> d.count);
 
-  arc = d3.arc()
+  let arc = d3.arc()
     .innerRadius(0)
     .outerRadius(d => radiusScale(d.count))
     .startAngle((d,i) => angleScale(runningSum(i)))
@@ -301,5 +301,3 @@ function renderPanel(index, container){
     );
 
 }
-
-var arc;
