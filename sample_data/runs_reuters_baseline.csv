@@ -1,0 +1,9 @@
+run_id,action_impact,action_type,action_details,action_details_short,metric,metric_score
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,accuracy_overall,0.8277275989900146
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,accuracy_overall_weighted,0.6618995633187773
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,f1,0.3905523526129812
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,fmi,0.3832933303899417
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,silhouette_overall,0.03294217769223045
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,homogeneity,0.28786318918281345
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,completness,0.31906053959770403
+baseline_run,Default Params,Default Params,Default Params,ce10b908234ec51833fb9baf3c5f5308,v_measure,0.30266005468439583

@@ -24,10 +24,9 @@ runs<-read.csv(file="sample_data/runs_sample.csv",stringsAsFactors = FALSE)
 topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv",stringsAsFactors = FALSE)
 topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv",stringsAsFactors = FALSE)
 gt_class<-read.csv(file="sample_data/gt_topics_sample.csv",stringsAsFactors = FALSE)
-docs<-read.csv(file="sample_data/documents_sample.csv",stringsAsFactors = FALSE)
+#docs<-read.csv(file="sample_data/documents_sample.csv",stringsAsFactors = FALSE)
 
 
-#data prep
 docs$assign_ind<-apply(docs[,c("topic_id","topic_assigned")], 1, function(x){
     if(x[1]==x[2]){
       return(1)
@@ -38,6 +37,11 @@ docs$assign_ind<-apply(docs[,c("topic_id","topic_assigned")], 1, function(x){
 
 ```
 
+Load in the baseline data from the default reuters run
+
+```{r}
+baseline_run<-read.csv(file="sample_data/runs_reuters_baseline.csv")
+```
 
 
 **Customized functions**
@@ -82,7 +86,6 @@ tmp_gt<-gt_class %>% filter(run_id == run_ids$run_id[1])
 min(tmp_gt$grp_size)
 max(tmp_gt$grp_size)
 
-print(run_ids)
 ```
 
 
@@ -129,10 +132,21 @@ samp_runs<-runs %>%
   do(sample_n(.,1)) %>%
   ungroup()
 
+tmp<-baseline_run %>%
+  filter(action_impact != 'metrics') 
+
+metric_labs = c("Accuracy Overall","Accuracy Overall - Weighted", "Precision - F1", "Precision - FMI", "Cluster Homogenety","Cluster Completeness","Cluster Variance","Document Shilloutte")
+
+runs$metric<-factor(runs$metric,levels = c("accuracy_overall","accuracy_overall_weighted","f1", "fmi", "homogeneity", "completness" ,"v_measure","silhouette_overall"))
+
+names(metric_labs) = levels(runs$metric)
+  
+#labeller = labeller(metric=metric_labs)
 runs %>%
   #filter(metric !="silhouette_overall") %>%
   ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
   geom_boxplot(aes(fill=action_impact))+
+  geom_vline(data=tmp,aes(xintercept=metric_score),color="red")+
   facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
   labs(x= "Metric Score", y = "")+
   theme_bw()+
@@ -141,21 +155,8 @@ runs %>%
   theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
         legend.position="bottom")
 
-ggsave("output/benchmark_metrics_overall.png",dpi= 300)
+ggsave("output/benchmark_metrics_overall.pdf",dpi= 300)
 
-```
-
-
-We can also see the differences of metrics within an individual run:
-
-```{r,fig.width=10,unit="in"}
-runs %>%
-  ggplot(aes(x=metric,y=metric_score)) +
-  geom_bar(stat="identity",aes(fill = action_impact),color="grey")+
-  facet_grid(.~run_id)+
-  theme_bw()+
-  scale_fill_brewer(palette = "Greys",direction=-1)+
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5))
 ```
 
 What we can conclude is that individual metrics would measures the quality of the change differently. Accuracy is the most sentistive to changes, but f1 and fm1, which measure both repcision and accuracy is not. Metrics that look at the quality of the clustering, or in other terms, how similar documents to other documents assigned to the same topic. Compared to accuracy those metrics are far more stable and don't change very much even when the user makes from substantive changes.
@@ -163,6 +164,172 @@ What we can conclude is that individual metrics would measures the quality of th
 Why is that?
 
 The dataset that we are using has two very large classes and this seems to dominate both the algorithm's ability to select topics and the to assess their quality. This observations underscores the important relationship between the underlying structure of the data and the machine learning model. To some extent, hyper paramter tuning achieves very little.
+
+
+### Summarizing Deviation Across Runs
+
+As we move further into the analysis, we focus on runs that deviatate the most and the least from the performance of the baseline run, which simply uses default parameters. 
+
+```{r}
+run_summary = c()
+
+#calcualte how much each run deviates from baseline
+for(val in unique(runs$metric)){
+  run_all <- filter(runs, metric == val )
+  run_base <-filter(baseline_run,metric == val)
+
+  tmp <- round(abs(run_all$metric_score - run_base$metric_score),3)
+  #tmp_idx<-order(tmp,decreasing=TRUE)
+  
+  run_summary<-rbind(run_summary, cbind(run_all$run_id,run_all$action_type,tmp,run_all$metric))
+}
+
+#average the rank across all of the metrics (some have different number of runs)
+run_summary<-data.frame("run_id" = as.character(run_summary[,1]),
+                        "action_type" = as.character(run_summary[,2]),
+                        "deviation" = as.numeric(run_summary[,3]) ,
+                        "metric" = as.character(run_summary[,4]))
+
+run_rank<- run_summary %>%
+  group_by(run_id) %>%
+  summarise(avg_deviation = mean(deviation)) %>%
+  ungroup()
+
+run_act<- runs %>%
+  dplyr::select(run_id,action_type,action_impact) %>%
+  distinct()
+
+run_rank<-left_join(run_rank,run_act) %>% arrange(-avg_deviation) 
+
+run_rank
+
+```
+
+Can also look at the deviation from baseline by action type
+
+```{r}
+ggplot(run_rank,aes(y=action_type,x=avg_deviation))+
+  geom_boxplot(color="#d3d3d3")+
+  geom_point(alpha=0.5,size=3)+
+  geom_vline(xintercept = 0,color="red")+
+  labs(x="Average Deviation from Baseline Performance (across all metrics)",y="")+
+  facet_grid(action_impact~.,scales="free_y")+
+  theme_bw()
+```
+
+Create a sample dataset with a few runs to focus on from for visualizing the topic and the run similarity. For each type of action, get the run that has the greatest and the smallest deviation from the baseline performance. The changes that consistently had the largest impact were those related to removing data terms from the data
+
+```{r}
+max_run<-run_rank %>%
+  group_by(action_type) %>%
+  top_n(avg_deviation,n=1)
+
+min_run<-run_rank %>%
+  group_by(action_type) %>%
+  top_n(avg_deviation,n=-1)
+
+sample_runs<-rbind(max_run,min_run)
+
+```
+
+Output the files for these runs to be interactively visualized by the d3 tool so that others can explore runs.
+
+```{r}
+#file names:
+# - topic-by-text.csv = topic_doc
+topic_doc_samp<- topic_doc %>% 
+  filter(run_id %in% as.character(sample_runs$run_id)) %>%
+  filter(top_doc_order <=20)
+
+write.csv(topic_doc_samp, file="./output/topics-by-text.csv",quote=FALSE,row.names=FALSE)
+
+# - words-by-topics.csv = topic_term
+topic_term_samp<- topic_term %>% 
+  filter(run_id %in% as.character(sample_runs$run_id))
+
+write.csv(topic_term_samp,file="./output/words-by-text.csv",quote=FALSE,row.names=FALSE)
+
+# - runs_sample.csv = runs
+runs_samp = runs %>% filter(run_id %in% as.character(sample_runs$run_id))
+write.csv(runs_samp, file="./output_runs.csv")
+
+# - topic-by-count.csv = get the predicted topic sizes for each run
+topic_count = docs %>%
+  filter(run_id %in% as.character(sample_runs$run_id)) %>%
+  group_by(run_id,topic_id)%>%
+  count(name="count")
+
+write.csv(topic_count, file="./output/topic-by-count.csv",quote=FALSE,row.names=FALSE)
+
+```
+
+
+## Ground Truth Analysis
+```{r,echo=FALSE,include=FALSE}
+assign_tree<-function(dat = NULL,run_info=NULL){
+
+  total_grp_docs<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind==1)%>%
+    dplyr::select(doc_id,topic_assigned,gt_topic) %>%
+    distinct() %>%
+    group_by(topic_assigned,gt_topic) %>%
+    count()
+  
+  
+  grp_prob<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind == 1) %>%
+    group_by(topic_assigned,gt_topic) %>%
+    summarise(avg = median(topic_prob))
+  
+  
+  p<-left_join(total_grp_docs, grp_prob) %>%
+    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
+      geom_treemap()+
+      scale_fill_gradient(high = "#132B43",low="#56B1F7",limits=c(0,1),name="Median Assignment Probability")+
+      geom_treemap_subgroup_border(color="white")+
+      geom_treemap_text(aes(label=gt_topic), color="black")+
+      theme_bw()+
+      theme(legend.position="bottom")
+  
+  return(p)
+}
+  
+```
+
+
+```{r}
+max_run <- run_rank[1,]
+min_run <- run_rank[nrow(run_rank),]
+
+print(max_run)
+print(min_run)
+
+p1<-assign_tree(docs,max_run$run_id)
+p2<-assign_tree(docs,min_run$run_id)
+```
+
+```{r}
+p1
+```
+
+```{r}
+p2
+```
+
+
+```{r}
+tree_together<-cowplot::plot_grid(p1,p2)
+save_plot("./output/treemap_comparison.pdf", tree_together, base_height=5,base_asp=1.1, ncol = 2,dpi=300)
+```
+
+
+
+## TOPIC Metrics
+Topic metrics and cluster metrics are currently being done via the interactive visualization tools that attends this analysis packed.
+
+
 
 ### Topic Metrics
 Many individuals are also interest in the quality of the topics, usually examined by looking closely at the distribution of terms within topics. We examine those here.
@@ -207,60 +374,5 @@ heatmap(JS_matrix)
 ```{r}
 CS_matrix<-CS(prob_matrix)
 heatmap(CS_matrix)
-```
-
-## Document Analysis
-
-## Ground Truth Analysis
-```{r,echo=FALSE,include=FALSE}
-assign_tree<-function(dat = NULL,run_info=NULL){
-
-  total_grp_docs<-dat %>%
-    filter(run_id == run_info)%>%
-    filter(assign_ind==1)%>%
-    dplyr::select(doc_id,topic_assigned,gt_topic) %>%
-    distinct() %>%
-    group_by(topic_assigned,gt_topic) %>%
-    count()
-  
-  
-  grp_prob<-dat %>%
-    filter(run_id == run_info)%>%
-    filter(assign_ind == 1) %>%
-    group_by(topic_assigned,gt_topic) %>%
-    summarise(avg = median(topic_prob))
-  
-  
-  p<-left_join(total_grp_docs, grp_prob) %>%
-    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
-      geom_treemap()+
-      scale_fill_gradient(high = "#132B43",low="#56B1F7",limits=c(0,1),name="Median Assignment Probability")+
-      geom_treemap_subgroup_border(color="white")+
-      geom_treemap_text(aes(label=gt_topic), color="black")+
-      theme_bw()+
-      theme(legend.position="bottom")
-  
-  return(p)
-}
-  
-```
-
-
-```{r}
-max_run<-runs %>%
-  filter(metric == "accuracy_overall") %>%
-  slice(which.max(metric_score))
-
-min_runs<-runs %>%
-  filter(metric == "accuracy_overall") %>%
-  slice(which.min(metric_score))
-
-p1<-assign_tree(docs,max_run$run_id)
-p2<-assign_tree(docs,min_runs$run_id)
-```
-
-```{r}
-tree_together<-cowplot::plot_grid(p1,p2)
-save_plot("./output/treemap_comparison.pdf", tree_together, base_height=5,base_asp=1.1, ncol = 2,dpi=300)
 ```
 
