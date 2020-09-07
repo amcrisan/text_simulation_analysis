@@ -298,7 +298,7 @@ function renderPanel(index, container){
 
   let arc = d3.arc()
     .innerRadius(0)
-    .outerRadius(d => radiusScale(d.count))
+    .outerRadius(d => coxW/2)//radiusScale(d.count))
     .startAngle((d,i) => angleScale(runningSum(i)))
     .endAngle((d,i) => angleScale(runningSum(i)+d.count));
 
@@ -335,6 +335,7 @@ function renderPanel(index, container){
   }
 
   sharedTokensArray.sort((a,b) => d3.descending(a.count,b.count));
+
   let topSharedTokens = sharedTokensArray.splice(0,tokenLimit).map(d=>d.token);
 
   var matrixSVG = container.select("#matrix");
