@@ -251,7 +251,7 @@ write.csv(topic_term_samp,file="./output/words-by-text.csv",quote=FALSE,row.name
 
 # - runs_sample.csv = runs
 runs_samp = runs %>% filter(run_id %in% as.character(sample_runs$run_id))
-write.csv(runs_samp, file="./output_runs.csv")
+write.csv(runs_samp, file="./output/runs_sample.csv")
 
 # - topic-by-count.csv = get the predicted topic sizes for each run
 topic_count = docs %>%
