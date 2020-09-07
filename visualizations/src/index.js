@@ -136,12 +136,23 @@ function renderPanel(index, container){
   let runs = Array.from(topicdata.keys());
   let runEntry = runs[index];
 
+  let runInfo = runsdata.get(runEntry);
+
   //initialize to the current selected run
   container.select("select").selectAll("options")
     .attr("selected", (d,i) => i==index ? "selected" : null);
 
   container.select("#title")
     .text(runEntry+": " + runsdata.get(runEntry)[0].action_type);
+
+  container.select("#info").selectAll("div").data(runInfo).join(
+    enter => enter.append("div")
+      .text(d=> d.metric + ": " + d.metric_score),
+    update => update
+      .text(d=> d.metric + ": " + d.metric_score),
+    exit => exit.remove()
+  );
+
   //right now we just grab the lexically first t topics.
   //probably want to grab the "biggest" topics instead (via document assignment)
 
@@ -298,7 +309,7 @@ function renderPanel(index, container){
 
   let arc = d3.arc()
     .innerRadius(0)
-    .outerRadius(d => radiusScale(d.count))
+    .outerRadius(d => coxW/2)//radiusScale(d.count))
     .startAngle((d,i) => angleScale(runningSum(i)))
     .endAngle((d,i) => angleScale(runningSum(i)+d.count));
 
