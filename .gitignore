@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 sample_data/documents_sample.csv
+
+./visualizations/node_modules/*

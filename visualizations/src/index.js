@@ -26,7 +26,7 @@ var leftRun = 0;
 var rightRun = 1;
 
 //LOADING
-d3.csv("./data/topics-by-texts.csv").then(function(topics) {
+d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
 //load in two csvs, one after the other. First is the Topic Docs csv, second is the
 //Topic Terms csv.
 
@@ -40,7 +40,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
     topicdata = d3.group(topics, d=>d.run_id, d=>d.topic_id);
   }
 
-  d3.csv("./data/words-by-topics.csv").then(function(words) {
+  d3.csv("./data/updated/words-by-topics.csv").then(function(words) {
     words.forEach(function (d){
       d['top_term_order'] = +d['top_term_order'];
       d['top_prob'] = +d['top_prob'];
@@ -51,7 +51,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
     }
 
 
-    d3.csv("./data/topics-by-count.csv").then(function(topics) {
+    d3.csv("./data/updated/topics-by-count.csv").then(function(topics) {
       topics.forEach(function(d){
         d['count'] = +d['count'];
       });
@@ -62,7 +62,7 @@ d3.csv("./data/topics-by-texts.csv").then(function(topics) {
         topiccounts = d3.group(topics, d=>d['run_id']);
       }
 
-      d3.csv("./data/runs_sample.csv").then(function (runs){
+      d3.csv("./data/updated/runs_sample.csv").then(function (runs){
         runsdata = d3.group(runs, d=> d.run_id);
 
         setup();
