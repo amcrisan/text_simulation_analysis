@@ -179,8 +179,7 @@ function renderPanel(index, container){
   let topicScale = d3.scaleLinear().domain([0,maxTopicProb]);
   let tokenScale = d3.scaleLinear().domain([0,maxTokenProb]);
 
-  let w = parseInt(container.style("width"));
-  let h = parseInt(container.style("height"));
+
 
   let epsilonAlpha = 0.5;
   let colorAlpha = d3.scaleLinear().range([epsilonAlpha,1]);
@@ -190,6 +189,9 @@ function renderPanel(index, container){
   //DRAW HISTOGRAM
 
   let histSVG = container.select("#histogram");
+
+  let w = parseInt(histSVG.style("width"));
+  let h = parseInt(histSVG.style("height"));
 
   let histH = parseInt(histSVG.style("height"));
   let maxCount = d3.max(topicCount,d=>d.count);
