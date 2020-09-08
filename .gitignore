@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 sample_data/documents_sample.csv
+.DS_Store

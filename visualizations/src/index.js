@@ -103,6 +103,7 @@ function setupPanel(index,container){
 
   var options = container.select("select").selectAll("option").data(runs).enter().append("option")
     .attr("value",(d,i)=>i)
+    .attr("selected", (d,i) => i==index ? "selected" : null)
     .text(d=>d);
 
   //Add an svg group
