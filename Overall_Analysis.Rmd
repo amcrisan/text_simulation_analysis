@@ -20,11 +20,11 @@ library(treemapify)
 library(cowplot)
 
 #load data
-runs<-read.csv(file="sample_data/runs_sample.csv",stringsAsFactors = FALSE)
-topic_term<-read.csv(file="sample_data/pred_topics_terms_sample.csv",stringsAsFactors = FALSE)
-topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample.csv",stringsAsFactors = FALSE)
-gt_class<-read.csv(file="sample_data/gt_topics_sample.csv",stringsAsFactors = FALSE)
-#docs<-read.csv(file="sample_data/documents_sample.csv",stringsAsFactors = FALSE)
+runs<-read.csv(file="sample_data/runs_sample_full.csv",stringsAsFactors = FALSE)
+topic_term<-read.csv(file="sample_data/pred_topics_terms_sample_full.csv",stringsAsFactors = FALSE)
+topic_doc<-read.csv(file="sample_data/pred_topics_docs_sample_full.csv",stringsAsFactors = FALSE)
+gt_class<-read.csv(file="sample_data/gt_topics_sample_full.csv",stringsAsFactors = FALSE)
+docs<-read.csv(file="sample_data/documents_sample_full.csv",stringsAsFactors = FALSE)
 
 
 docs$assign_ind<-apply(docs[,c("topic_id","topic_assigned")], 1, function(x){
@@ -41,6 +41,19 @@ Load in the baseline data from the default reuters run
 
 ```{r}
 baseline_run<-read.csv(file="sample_data/runs_reuters_baseline.csv")
+baseline_topic_term<-read.csv(file="sample_data/pred_topics_terms_reuters_baseline.csv")
+baseline_topic_doc<-read.csv(file="sample_data/pred_topics_docs_reuters_baseline.csv")
+
+baseline_docs<-read.csv(file="sample_data/documents_reuters_baseline.csv")
+
+baseline_docs$assign_ind<-apply(baseline_docs[,c("topic_id","topic_assigned")], 1, function(x){
+    if(x[1]==x[2]){
+      return(1)
+    }else{
+      return(0)
+    }
+})
+
 ```
 
 
@@ -144,18 +157,19 @@ names(metric_labs) = levels(runs$metric)
 #labeller = labeller(metric=metric_labs)
 runs %>%
   #filter(metric !="silhouette_overall") %>%
-  ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
-  geom_boxplot(aes(fill=action_impact))+
-  geom_vline(data=tmp,aes(xintercept=metric_score),color="red")+
-  facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
-  labs(x= "Metric Score", y = "")+
-  theme_bw()+
-  scale_x_continuous(limits=c(0,1))+
-  scale_fill_brewer(palette = "Greys",name="Action Impact")+
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
-        legend.position="bottom")
+  #ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
+  ggplot(aes(y=action_type,x=metric_score))+
+    geom_boxplot(aes(fill=action_impact))+
+    geom_vline(data=tmp,aes(xintercept=metric_score),color="red")+
+    facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
+    labs(x= "Metric Score", y = "")+
+    theme_bw()+
+    scale_x_continuous(limits=c(0,1))+
+    scale_fill_brewer(palette = "Greys",name="Action Impact")+
+    theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
+          legend.position="bottom")
 
-ggsave("output/benchmark_metrics_overall.pdf",dpi= 300)
+#ggsave("output/benchmark_metrics_overall.pdf",dpi= 300)
 
 ```
 
@@ -196,7 +210,7 @@ run_rank<- run_summary %>%
   ungroup()
 
 run_act<- runs %>%
-  dplyr::select(run_id,action_type,action_impact) %>%
+  dplyr::select(run_id,action_type,action_details,action_impact) %>%
   distinct()
 
 run_rank<-left_join(run_rank,run_act) %>% arrange(-avg_deviation) 
@@ -213,8 +227,11 @@ ggplot(run_rank,aes(y=action_type,x=avg_deviation))+
   geom_point(alpha=0.5,size=3)+
   geom_vline(xintercept = 0,color="red")+
   labs(x="Average Deviation from Baseline Performance (across all metrics)",y="")+
-  facet_grid(action_impact~.,scales="free_y")+
+  facet_grid(action_impact~.,scales="free_y",space='free_y')+
   theme_bw()
+
+
+ggsave("output/action_impact.png",height=5,dpi= 300)
 ```
 
 Create a sample dataset with a few runs to focus on from for visualizing the topic and the run similarity. For each type of action, get the run that has the greatest and the smallest deviation from the baseline performance. The changes that consistently had the largest impact were those related to removing data terms from the data
@@ -240,18 +257,22 @@ Output the files for these runs to be interactively visualized by the d3 tool so
 topic_doc_samp<- topic_doc %>% 
   filter(run_id %in% as.character(sample_runs$run_id)) %>%
   filter(top_doc_order <=20)
+tmp<- baseline_topic_doc %>% filter(top_doc_order <=20) %>% full_join(topic_doc_samp)
 
-write.csv(topic_doc_samp, file="./output/topics-by-text.csv",quote=FALSE,row.names=FALSE)
+write.csv(tmp, file="./visualizations/data/updated/topics-by-text.csv",quote=FALSE,row.names=FALSE)
 
 # - words-by-topics.csv = topic_term
 topic_term_samp<- topic_term %>% 
   filter(run_id %in% as.character(sample_runs$run_id))
+tmp<- baseline_topic_term %>% full_join(topic_term_samp)
 
-write.csv(topic_term_samp,file="./output/words-by-text.csv",quote=FALSE,row.names=FALSE)
+write.csv(tmp,file="./visualizations/data/updated/words-by-topics.csv",quote=FALSE,row.names=FALSE)
 
 # - runs_sample.csv = runs
 runs_samp = runs %>% filter(run_id %in% as.character(sample_runs$run_id))
-write.csv(runs_samp, file="./output/runs_sample.csv")
+tmp<- baseline_run %>% full_join(runs_samp) %>% select(-contains("action_details"))
+
+write.csv(tmp, file="./visualizations/data/updated/runs_sample.csv",row.names=FALSE,quote=TRUE)
 
 # - topic-by-count.csv = get the predicted topic sizes for each run
 topic_count = docs %>%
@@ -259,10 +280,26 @@ topic_count = docs %>%
   group_by(run_id,topic_id)%>%
   count(name="count")
 
-write.csv(topic_count, file="./output/topic-by-count.csv",quote=FALSE,row.names=FALSE)
+baseline_topic_count <- baseline_docs %>%
+  group_by(run_id,topic_id)%>%
+  count(name="count")
+  
+tmp<- full_join(baseline_topic_count,topic_count)
+
+write.csv(tmp, file="./visualizations/data/updated/topics-by-count.csv",quote=FALSE,row.names=FALSE)
 
 ```
 
+```{r}
+base_docs<-read.csv(file="sample_data/documents_reuters_baseline.csv",stringsAsFactors = FALSE)
+
+base_docs %>%
+  group_by(run_id,topic_id)%>%
+  count(name="count")
+
+write.csv(base_docs, file="./output/baseline-topic-by-count.csv",quote=FALSE,row.names=FALSE) 
+
+```
 
 ## Ground Truth Analysis
 ```{r,echo=FALSE,include=FALSE}
@@ -320,7 +357,7 @@ p2
 
 
 ```{r}
-tree_together<-cowplot::plot_grid(p1,p2)
+tree_together<-cowplot::plot_grid(p2,p1)
 save_plot("./output/treemap_comparison.pdf", tree_together, base_height=5,base_asp=1.1, ncol = 2,dpi=300)
 ```
 
