@@ -15,24 +15,22 @@
         max-width: 80%;
         display: flex;
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: flex-start;
     }
 
     .left{
-      width: 50%;
 
     }
 
     .right{
-      width: 50%;
     }
 
     .panel{
-      width: 100%;
-      height: 100%;
+      width: 800px;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
 
     .histogram{
@@ -46,7 +44,7 @@
     }
 
     .matrix{
-      width: 80%;
+      width: 550px;
       height: 350px;
     }
 
@@ -59,12 +57,16 @@
       text-align: center;
     }
 
+    svg{
+
+    }
+
   </style>
 </head>
 
 <body>
   <div id="container" class="container">
-    <div id="leftModel" class="left">
+    <div id="leftModel" class="left panel">
       <div id="panelUI" class="panelUI">
         <label for="leftRun">Choose a run:</label>
         <select name="leftRun" id="leftRun">
@@ -74,14 +76,17 @@
         <div id="title" class="title"></div>
         <div id="info" class="info"></div>
         <svg id="histogram" class="histogram"></svg>
+        <br />
         <svg id="coxcomb" class="coxcomb"></svg>
+        <br />
         <svg id="matrix" class="matrix"></svg>
+        <br />
         <table id="textTable" class="textTable"></table>
         <br />
         <table id="wordTable" class="wordTable"></table>
     </div>
 
-    <div id="rightModel" class="right">
+    <div id="rightModel" class="right panel">
       <div id="panelUI" class="panelUI">
         <label for="rightRun">Choose a run:</label>
         <select name="rightRun" id="rightRun">
@@ -91,8 +96,11 @@
       <div id="title" class="title"></div>
       <div id="info" class="info"></div>
       <svg id="histogram" class="histogram"></svg>
+      <br />
       <svg id="coxcomb" class="coxcomb"></svg>
+      <br />
       <svg id="matrix" class="matrix"></svg>
+      <br />
       <table id="textTable" class="textTable"></table>
       <br />
       <table id="wordTable" class="wordTable"></table>
