@@ -63,6 +63,10 @@ d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
       }
 
       d3.csv("./data/updated/runs_sample.csv").then(function (runs){
+        runs.forEach(function (d){
+          d['metric_score'] = +d['metric_score'];
+        });
+
         runsdata = d3.group(runs, d=> d.run_id);
 
         setup();
@@ -131,6 +135,18 @@ function setupPanel(index,container){
   renderPanel(index,container);
 }
 
+function calculateSR(){
+  let runs = Array.from(topicdata.keys());
+  let leftRunData = runsdata.get(runs[leftRun]);
+  let rightRunData = runsdata.get(runs[rightRun]);
+
+  let m = leftRunData.length;
+  let sr = leftRunData.map(d=> d.metric_score)
+  .reduce( (acc,cur,idx) => acc + Math.abs(cur - rightRunData[idx].metric_score));
+
+  return sr/m;
+}
+
 function renderPanel(index, container){
 
   //Populate the dropdown
@@ -179,8 +195,6 @@ function renderPanel(index, container){
   let maxTokenProb = d3.max(Array.from(tokens).map(d=>d3.max(d[1].map(d => d.top_prob))));
   let topicScale = d3.scaleLinear().domain([0,maxTopicProb]);
   let tokenScale = d3.scaleLinear().domain([0,maxTokenProb]);
-
-
 
   let epsilonAlpha = 0.5;
   let colorAlpha = d3.scaleLinear().range([epsilonAlpha,1]);
@@ -464,4 +478,11 @@ function renderPanel(index, container){
         .attr("stroke","#333"),
       exit => exit.remove()
     );
+/*
+    let svgTable = container.select("#svgTable");
+
+    svgTable.selectAll("g").data(topics.keys()).join(
+
+    );
+*/
 }
