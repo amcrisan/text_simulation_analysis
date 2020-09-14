@@ -1,0 +1,377 @@
+---
+title: "Simulation Analysis - COVID 19"
+output: html_document
+---
+This document summarizes the analysis supporting our findings in the main paper text. It includes both the code, results, and our interpretation of the results. The contents of this document can be modified and run.
+
+## Set up
+
+This section effectively setsup the analysis environment. It includes the different R packages used in the data, the data, and finally additional custom functions that have been written to support analysis.
+
+**Packages and Data**
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(philentropy)
+library(tidyr)
+library(ggthemes)
+library(forcats)
+library(treemapify)
+library(cowplot)
+
+#load data
+runs<-read.csv(file="sample_data/runs_covid_sample_10000.csv",stringsAsFactors = FALSE)
+topic_term<-read.csv(file="sample_data/pred_topics_terms_covid_sample_10000.csv",stringsAsFactors = FALSE)
+topic_doc<-read.csv(file="sample_data/pred_topics_docs_covid_sample_10000.csv",stringsAsFactors = FALSE)
+gt_class<-read.csv(file="sample_data/gt_topics_covid_sample_10000.csv",stringsAsFactors = FALSE)
+docs<-read.csv(file="sample_data/documents_covid_sample_10000.csv",stringsAsFactors = FALSE)
+
+
+docs$assign_ind<-apply(docs[,c("topic_id","topic_assigned")], 1, function(x){
+    if(x[1]==x[2]){
+      return(1)
+    }else{
+      return(0)
+    }
+})
+
+```
+
+
+**Customized functions**
+
+Custom functions for quickly computing cosine and jensen shannon distances from a matrix of probabilities.
+```{r}
+#generic function of handle calculation of jensen_shannon distance from matrix
+JS<-function(prob_matrix){
+    tmp<-apply(prob_matrix,1,function(x){
+      apply(prob_matrix,1,function(x,y){
+        jensen_shannon(x,y,testNA = FALSE, unit = "log2")
+      },x = x)
+    })
+    
+    return(tmp)
+}
+
+#generic function of handle calculation of cosine distance from matrix
+CS<-function(prob_matrix){
+    tmp<-apply(prob_matrix,1,function(x){
+      apply(prob_matrix,1,function(x,y){
+        cosine_dist(x,y,testNA = FALSE)
+      },x = x)
+    })
+    
+    return(tmp)
+}
+
+```
+
+
+## Dataset overview
+
+We use the Reuters-21578 benchmark dataset to inspect the effects of user interactions with text analytics pipelines. The dataset has 10,788 documents that have been manually assigned to one or more topics of a possible set of 90 topics. We limit our analysis to documents that have only one topicassigned to them, which is 9,160 (84%) of all documents. These 9,160 documents are represent a subset of 65 of the initial 90 topics.
+
+The same set of documents and ground truth topics are used across multiple runs of the data. We use the data from a single run to visualize the characteristics of the this dataset.
+```{r}
+#get data from a single run
+run_ids<-runs %>% select(run_id) %>% unique()
+tmp_gt<-gt_class %>% filter(run_id == run_ids$run_id[1])
+
+min(tmp_gt$grp_size)
+max(tmp_gt$grp_size)
+
+```
+
+
+**Size of ground truth datasets**
+
+There are a total of 65 'ground truth' topics in this dataset. They vary in size from `min(tmp_gt$grp_size)` to `max(tmp_gt$grp_size)`. There is a long tail, in the the majority of the documents belong to two topics.
+
+```{r}
+tmp_gt %>% 
+  ggplot(aes(x=reorder(category,-grp_size), y = grp_size)) +
+  geom_bar(stat="identity")+
+  theme_bw()+
+  labs(y="Total Number of Documents",x="Topic")+
+  theme(axis.text.x = element_text(angle = 90, hjust=1,vjust=0.5))
+
+ggsave("output/covid_gt_topic_distribution.png",dpi= 300)
+```
+
+
+## User Interactions
+
+A summary of user interactions that we simulated :
+
+```{r}
+runs %>%
+  dplyr::select(action_impact,action_type) %>%
+  distinct()
+```
+
+
+## Evaluations of User Interactions - Run Analysis
+
+A run here captures the changes to the output for our text analytics pipelines based upon one single user action.  We see the results according to three types of metrics:
+
+1) Benchmark metrics
+2) Cluster metrics
+3) Topic metrics.
+
+## Benchmark Metrics
+
+```{r, fig.height=5,fig.width=10 }
+samp_runs<-runs %>%
+  group_by(action_impact,action_type,run_id) %>% 
+  do(sample_n(.,1)) %>%
+  ungroup()
+
+tmp<-baseline_run %>%
+  filter(action_impact != 'metrics') 
+
+metric_labs = c("Accuracy Overall","Accuracy Overall - Weighted", "Precision - F1", "Precision - FMI", "Cluster Homogenety","Cluster Completeness","Cluster Variance","Document Shilloutte")
+
+runs$metric<-factor(runs$metric,levels = c("accuracy_overall","accuracy_overall_weighted","f1", "fmi", "homogeneity", "completness" ,"v_measure","silhouette_overall"))
+
+names(metric_labs) = levels(runs$metric)
+  
+#labeller = labeller(metric=metric_labs)
+runs %>%
+  #filter(metric !="silhouette_overall") %>%
+  #ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
+  ggplot(aes(y=action_type,x=metric_score))+
+    geom_boxplot(aes(fill=action_impact))+
+    #geom_vline(data=tmp,aes(xintercept=metric_score),color="red")+
+    geom_vline(xintercept=1,color="red")+
+    facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
+    labs(x= "Metric Score", y = "")+
+    theme_bw()+
+    scale_x_continuous(limits=c(0,1))+
+    scale_fill_brewer(palette = "Greys",name="Action Impact")+
+    theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
+          legend.position="bottom")
+
+ggsave("output/covid_benchmark_metrics_overall.pdf",dpi= 300)
+
+```
+
+What we can conclude is that individual metrics would measures the quality of the change differently. Accuracy is the most sentistive to changes, but f1 and fm1, which measure both repcision and accuracy is not. Metrics that look at the quality of the clustering, or in other terms, how similar documents to other documents assigned to the same topic. Compared to accuracy those metrics are far more stable and don't change very much even when the user makes from substantive changes.
+
+Why is that?
+
+The dataset that we are using has two very large classes and this seems to dominate both the algorithm's ability to select topics and the to assess their quality. This observations underscores the important relationship between the underlying structure of the data and the machine learning model. To some extent, hyper paramter tuning achieves very little.
+
+
+### Summarizing Deviation Across Runs
+
+As we move further into the analysis, we focus on runs that deviatate the most and the least from the performance of the baseline run, which simply uses default parameters. 
+
+```{r}
+run_summary = c()
+
+#calcualte how much each run deviates from baseline
+for(val in unique(runs$metric)){
+  run_all <- filter(runs, metric == val )
+  run_base <-filter(baseline_run,metric == val)
+
+  tmp <- round(abs(run_all$metric_score - run_base$metric_score),3)
+  #tmp_idx<-order(tmp,decreasing=TRUE)
+  
+  run_summary<-rbind(run_summary, cbind(run_all$run_id,run_all$action_type,tmp,run_all$metric))
+}
+
+#average the rank across all of the metrics (some have different number of runs)
+run_summary<-data.frame("run_id" = as.character(run_summary[,1]),
+                        "action_type" = as.character(run_summary[,2]),
+                        "deviation" = as.numeric(run_summary[,3]) ,
+                        "metric" = as.character(run_summary[,4]))
+
+run_rank<- run_summary %>%
+  group_by(run_id) %>%
+  summarise(avg_deviation = mean(deviation)) %>%
+  ungroup()
+
+run_act<- runs %>%
+  dplyr::select(run_id,action_type,action_details,action_impact) %>%
+  distinct()
+
+run_rank<-left_join(run_rank,run_act) %>% arrange(-avg_deviation) 
+
+run_rank
+
+```
+
+Can also look at the deviation from baseline by action type
+
+```{r}
+ggplot(run_rank,aes(y=action_type,x=avg_deviation))+
+  geom_boxplot(color="#d3d3d3")+
+  geom_point(alpha=0.5,size=3)+
+  geom_vline(xintercept = 0,color="red")+
+  labs(x="Average Deviation from Baseline Performance (across all metrics)",y="")+
+  facet_grid(action_impact~.,scales="free_y",space='free_y')+
+  theme_bw()
+
+
+ggsave("output/covid_action_impact.png",height=5,dpi= 300)
+```
+
+Create a sample dataset with a few runs to focus on from for visualizing the topic and the run similarity. For each type of action, get the run that has the greatest and the smallest deviation from the baseline performance. The changes that consistently had the largest impact were those related to removing data terms from the data
+
+```{r}
+max_run<-run_rank %>%
+  group_by(action_type) %>%
+  top_n(avg_deviation,n=1)
+
+min_run<-run_rank %>%
+  group_by(action_type) %>%
+  top_n(avg_deviation,n=-1)
+
+sample_runs<-rbind(max_run,min_run)
+
+```
+
+Output the files for these runs to be interactively visualized by the d3 tool so that others can explore runs.
+
+```{r}
+#file names:
+# - topic-by-text.csv = topic_doc
+topic_doc_samp<- topic_doc %>% 
+  filter(run_id %in% as.character(sample_runs$run_id)) %>%
+  filter(top_doc_order <=20)
+
+write.csv(topic_doc_samp, file="./visualizations/data/covid/topics-by-text.csv",quote=FALSE,row.names=FALSE)
+
+# - words-by-topics.csv = topic_term
+topic_term_samp<- topic_term %>% 
+  filter(run_id %in% as.character(sample_runs$run_id))
+
+write.csv(topic_term_samp,file="./visualizations/data/covid/words-by-topics.csv",quote=FALSE,row.names=FALSE)
+
+# - runs_sample.csv = runs
+runs_samp = runs %>% filter(run_id %in% as.character(sample_runs$run_id))
+write.csv(runs_samp, file="./visualizations/data/covid/runs_sample.csv",row.names=FALSE,quote=TRUE)
+
+# - topic-by-count.csv = get the predicted topic sizes for each run
+topic_count = docs %>%
+  filter(run_id %in% as.character(sample_runs$run_id)) %>%
+  group_by(run_id,topic_id)%>%
+  count(name="count")
+
+write.csv(topic_count, file="./visualizations/data/updated/topics-by-count.csv",quote=FALSE,row.names=FALSE)
+
+```
+
+
+## Ground Truth Analysis
+```{r,echo=FALSE,include=FALSE}
+assign_tree<-function(dat = NULL,run_info=NULL){
+
+  total_grp_docs<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind==1)%>%
+    dplyr::select(doc_id,topic_assigned,gt_topic) %>%
+    distinct() %>%
+    group_by(topic_assigned,gt_topic) %>%
+    count()
+  
+  
+  grp_prob<-dat %>%
+    filter(run_id == run_info)%>%
+    filter(assign_ind == 1) %>%
+    group_by(topic_assigned,gt_topic) %>%
+    summarise(avg = median(topic_prob))
+  
+  
+  p<-left_join(total_grp_docs, grp_prob) %>%
+    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
+      geom_treemap()+
+      scale_fill_gradient(limits=c(0,1),name="Median Assignment Probability")+
+      geom_treemap_subgroup_border(color="white")+
+      geom_treemap_text(aes(label=gt_topic), color="black")+
+      theme_bw()+
+      theme(legend.position="bottom")
+  
+  return(p)
+}
+  
+```
+
+
+```{r}
+max_run <- run_rank[1,]
+min_run <- run_rank[nrow(run_rank),]
+
+print(max_run)
+print(min_run)
+
+p1<-assign_tree(docs,max_run$run_id)
+p2<-assign_tree(docs,min_run$run_id)
+```
+
+```{r}
+p1
+```
+
+```{r}
+p2
+```
+
+
+```{r}
+tree_together<-cowplot::plot_grid(p2,p1)
+save_plot("./output/covid_treemap_comparison.pdf", tree_together, base_height=5,base_asp=1.1, ncol = 2,dpi=300)
+```
+
+
+
+## TOPIC Metrics
+Topic metrics and cluster metrics are currently being done via the interactive visualization tools that attends this analysis packed.
+
+
+
+### Topic Metrics
+Many individuals are also interest in the quality of the topics, usually examined by looking closely at the distribution of terms within topics. We examine those here.
+
+First off, its easy to see that looking across the top terms from all runs quickly produces a visualization that is to visbly dense to parse. It might be worth comparing runs that have different extremes.
+
+```{r}
+topic_term %>%
+  filter(top_term_order<=10) %>% #select top ten terms only
+  ggplot(aes(y=top_term,x=run_id)) +
+  geom_tile() +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0),axis.text.y = element_blank())
+  
+```
+
+### Per run term similarity
+
+Here we compute the KL divergence within topics of a common run and also between runs.
+
+```{r}
+run_topics<-dplyr::filter(topic_term, run_id == '2912314e-a515-423') %>%
+  dplyr::select(topic_id,top_term,top_prob) %>%
+  tidyr::pivot_wider(names_from = top_term, values_from = top_prob) #values fill isn't work.. hmm
+
+run_topics[is.na(run_topics)]<-0 #shouldn't have to do this
+prob_matrix<-as.matrix(run_topics[,2:ncol(run_topics)])
+```
+
+#### KL Divergence
+```{r}
+KLMatrix<-KL(prob_matrix)
+heatmap(KLMatrix)
+```
+```{r}
+#gotta do this manually
+JS_matrix<-JS(prob_matrix)
+heatmap(JS_matrix)
+```
+
+## Topic Document Analysis
+```{r}
+CS_matrix<-CS(prob_matrix)
+heatmap(CS_matrix)
+```
+

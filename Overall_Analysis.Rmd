@@ -139,7 +139,7 @@ A run here captures the changes to the output for our text analytics pipelines b
 
 ## Benchmark Metrics
 
-```{r, fig.height=5,fig.width=10 }
+```{r fig.width =5, fig.height=2.25}
 samp_runs<-runs %>%
   group_by(action_impact,action_type,run_id) %>% 
   do(sample_n(.,1)) %>%
@@ -153,23 +153,24 @@ metric_labs = c("Accuracy Overall","Accuracy Overall - Weighted", "Precision - F
 runs$metric<-factor(runs$metric,levels = c("accuracy_overall","accuracy_overall_weighted","f1", "fmi", "homogeneity", "completness" ,"v_measure","silhouette_overall"))
 
 names(metric_labs) = levels(runs$metric)
-  
+
+num_metrics = factor(runs$action_impact)
 #labeller = labeller(metric=metric_labs)
 runs %>%
   #filter(metric !="silhouette_overall") %>%
   #ggplot(aes(y=fct_reorder(action_type,as.numeric(action_impact)),x=metric_score))+
-  ggplot(aes(y=action_type,x=metric_score))+
+  ggplot(aes(y=reorder(action_type,as.numeric(num_metrics)),x=metric_score))+
     geom_boxplot(aes(fill=action_impact))+
     geom_vline(data=tmp,aes(xintercept=metric_score),color="red")+
     facet_wrap(.~metric,ncol=4,labeller = labeller(metric=metric_labs))+
     labs(x= "Metric Score", y = "")+
     theme_bw()+
     scale_x_continuous(limits=c(0,1))+
-    scale_fill_brewer(palette = "Greys",name="Action Impact")+
+    scale_fill_brewer(palette = "Greys",name="Action Impact",labels=c("Assess","Model","Prepare"))+
     theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),
           legend.position="bottom")
 
-#ggsave("output/benchmark_metrics_overall.pdf",dpi= 300)
+ggsave("output/benchmark_metrics_overall.pdf",dpi= 300)
 
 ```
 
@@ -222,12 +223,17 @@ run_rank
 Can also look at the deviation from baseline by action type
 
 ```{r}
+
+action_labs = c("Assess","Model","Prepare")
+names(action_labs) = levels(factor(runs$action_impact))
+
+
 ggplot(run_rank,aes(y=action_type,x=avg_deviation))+
   geom_boxplot(color="#d3d3d3")+
   geom_point(alpha=0.5,size=3)+
   geom_vline(xintercept = 0,color="red")+
   labs(x="Average Deviation from Baseline Performance (across all metrics)",y="")+
-  facet_grid(action_impact~.,scales="free_y",space='free_y')+
+  facet_grid(action_impact~.,scales="free_y",space='free_y', labeller = labeller(action_impact=action_labs))+
   theme_bw()
 
 
@@ -324,7 +330,7 @@ assign_tree<-function(dat = NULL,run_info=NULL){
   p<-left_join(total_grp_docs, grp_prob) %>%
     ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
       geom_treemap()+
-      scale_fill_gradient(high = "#56B1F7" ,low="#132B43",limits=c(0,1),name="Median Assignment Probability")+
+      scale_fill_gradient(limits=c(0,1),name="Median Assignment Probability")+
       geom_treemap_subgroup_border(color="white")+
       geom_treemap_text(aes(label=gt_topic), color="black")+
       theme_bw()+
