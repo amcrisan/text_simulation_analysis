@@ -141,10 +141,11 @@ function calculateSR(){
   let rightRunData = runsdata.get(runs[rightRun]);
 
   let m = leftRunData.length;
-  let sr = leftRunData.map(d=> d.metric_score)
-  .reduce( (acc,cur,idx) => acc + Math.abs(cur - rightRunData[idx].metric_score));
-
-  return sr/m;
+  let lScores = leftRunData.map(d=>d.metric_score);
+  let rScores = rightRunData.map(d=>d.metric_score);
+  let diffs = lScores.map((d,i) => Math.abs(d - rScores[i]));
+  
+  return d3.sum(diffs)/m;
 }
 
 function renderPanel(index, container){

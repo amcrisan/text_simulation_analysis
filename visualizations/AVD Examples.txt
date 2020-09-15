@@ -1,0 +1,16 @@
+BASELINE/DEFAULT:
+baseline_run
+
+(ALMOST) NO CHANGE:
+af5c0580-6e98-4c1
+Remove ubiqitous words
+
+SMALL CHANGE:
+e1d07b36-2945-4d5
+Do not stem words
+
+BIG CHANGE:
+cb92a305-f25a-445
+Remove rare words
+
+
