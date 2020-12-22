@@ -10,6 +10,6 @@ This repository includes:
 3. [Code](visualization/) for generating comparative visualizations of individual runs of our topic model.
 
 
-Note that this repository does *not* include the full dataset used in our analysis, but only a sample. This is for reasons of space. However, by running our
+Note that this repository does *not* include the full dataset used in our analysis, but only a sample. This is for reasons of space. However, by running our pipeline you will be able to regenerate our data.
 
-This library contains only a subset of sample, the full results are available in [online and repository](https://osf.io/zgqaw/?view_only=1f2ffb37ba644dcea6f19a896dae474d)
+This [OSF Project](https://osf.io/zgqaw) is connected with a [github repository](https://github.com/amcrisan/text_simulation_analysis) and vice versa.
