@@ -1,6 +1,6 @@
 ## Analysis of Simulation Results
 
-This repository contains our data generation pipeline and our analysis notebooks that examine the results of simulation data for an LDA based text analytics pipeline as part of a paper _User Ex Machina: Simulation as a Design Probe inHuman-in-the-Loop Text Analytics_. Link to the author's copy of the submission available soon.
+This repository contains our data generation pipeline and our analysis notebooks that examine the results of simulation data for an LDA based text analytics pipeline as part of a paper _User Ex Machina: Simulation as a Design Probe in Human-in-the-Loop Text Analytics_. Link to the author's copy of the submission available soon.
 
 The general purpose of this project is to provide a pipeline simulating user actions on an abstract topic modeling system, and then comparing the impact of these actions across many different runs of the topic model, with an idea to understand how particular kinds of user actions impact the resulting models, either in terms of performance or in visual difference.
 
