@@ -26,7 +26,7 @@ var leftRun = 0;
 var rightRun = 1;
 
 //LOADING
-d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
+d3.csv("./data/topics-by-text.csv").then(function(topics) {
 //load in two csvs, one after the other. First is the Topic Docs csv, second is the
 //Topic Terms csv.
 
@@ -40,7 +40,7 @@ d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
     topicdata = d3.group(topics, d=>d.run_id, d=>d.topic_id);
   }
 
-  d3.csv("./data/updated/words-by-topics.csv").then(function(words) {
+  d3.csv("./data/words-by-topics.csv").then(function(words) {
     words.forEach(function (d){
       d['top_term_order'] = +d['top_term_order'];
       d['top_prob'] = +d['top_prob'];
@@ -51,7 +51,7 @@ d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
     }
 
 
-    d3.csv("./data/updated/topics-by-count.csv").then(function(topics) {
+    d3.csv("./data/topics-by-count.csv").then(function(topics) {
       topics.forEach(function(d){
         d['count'] = +d['count'];
       });
@@ -62,7 +62,7 @@ d3.csv("./data/updated/topics-by-text.csv").then(function(topics) {
         topiccounts = d3.group(topics, d=>d['run_id']);
       }
 
-      d3.csv("./data/updated/runs_sample.csv").then(function (runs){
+      d3.csv("./data/runs_sample.csv").then(function (runs){
         runs.forEach(function (d){
           d['metric_score'] = +d['metric_score'];
         });
@@ -89,7 +89,7 @@ function setup(){
 
 function setupPanel(index,container){
   //handle updates
-  container.select("select").on("change",function(e){
+  container.select("select").on("change",function(){
     let owner = d3.select(this);
     if(owner.attr("id")==="leftRun"){
       leftRun = +owner.property("value");
@@ -103,9 +103,9 @@ function setupPanel(index,container){
 
   //Populate the dropdown
   let runs = Array.from(topicdata.keys());
-  let runEntry = runs[index];
 
-  var options = container.select("select").selectAll("option").data(runs).enter().append("option")
+  //Options menu
+  container.select("select").selectAll("option").data(runs).enter().append("option")
     .attr("value",(d,i)=>i)
     .attr("selected", (d,i) => i==index ? "selected" : null)
     .text(d=>d);
@@ -135,6 +135,7 @@ function setupPanel(index,container){
   renderPanel(index,container);
 }
 
+//How different our runs are, in terms of the S_r metric we use in the paper.
 function calculateSR(){
   let runs = Array.from(topicdata.keys());
   let leftRunData = runsdata.get(runs[leftRun]);
@@ -144,7 +145,7 @@ function calculateSR(){
   let lScores = leftRunData.map(d=>d.metric_score);
   let rScores = rightRunData.map(d=>d.metric_score);
   let diffs = lScores.map((d,i) => Math.abs(d - rScores[i]));
-  
+
   return d3.sum(diffs)/m;
 }
 
@@ -207,16 +208,17 @@ function renderPanel(index, container){
   let histSVG = container.select("#histogram");
 
   let w = parseInt(histSVG.style("width"));
-  let h = parseInt(histSVG.style("height"));
+  //let h = parseInt(histSVG.style("height"));
 
   let histH = parseInt(histSVG.style("height"));
   let maxCount = d3.max(topicCount,d=>d.count);
 
   let padding = 5;
-  let histX = d3.scaleLinear().domain([0,topicCount.length]).range([padding,w-padding])
+  let histX = d3.scaleLinear().domain([0,topicCount.length]).range([padding,w-padding]);
   let histY = d3.scaleLinear().domain([0,maxCount]).range([histH-padding,padding]);
 
-  var histogram = histSVG.selectAll("rect")
+  //Histogram
+  histSVG.selectAll("rect")
     .data(topicCount, d=> d.run_id + d.topic_id)
       .join(
         enter => enter.append("rect")
@@ -273,7 +275,7 @@ function renderPanel(index, container){
         exit => exit.remove()
       );
 
-  })
+  });
 
   //MAKE TOP TOKENS BY TOPIC TABLE
 
@@ -297,7 +299,6 @@ function renderPanel(index, container){
 
   wordTable.selectAll("tr").filter((d,i) => i>0).each(function(d,i){
       var rowData = Array.from(topics.keys()).map(d => tokens.get(d)[i]);
-      d3.select(this).selectAll("td").data(rowData)
       d3.select(this).selectAll("td").data(rowData, d=> d.run_id + d.top_doc)
         .join(
           enter => enter.append("td")
@@ -309,7 +310,7 @@ function renderPanel(index, container){
             .style("color", (d,i) => d3.interpolateLab("white",colors(i % 10))(colorAlpha(tokenScale(d.top_prob)))),
           exit => exit.remove()
         );
-  })
+  });
 
   //MAKE COXCOMB OVERVIEW
   let arcSVG = container.select("#coxcomb");
@@ -320,14 +321,16 @@ function renderPanel(index, container){
 
   let numDocs = d3.sum(topicCount,d=>d.count);
 
-  let radiusScale = d3.scaleLinear().domain([0,maxCount]).range([0,coxW/2]);
+//If we want a Nightingale coxcomb effect rather than just a standard pie,
+// Scale the radius using this function:
+  //let radiusScale = d3.scaleLinear().domain([0,maxCount]).range([0,coxW/2]);
   let angleScale = d3.scaleLinear().domain([0,numDocs]).range([0,2*Math.PI]);
 
   let runningSum = i => d3.sum(topicCount.slice(0,i), d=> d.count);
 
   let arc = d3.arc()
     .innerRadius(0)
-    .outerRadius(d => coxW/2)//radiusScale(d.count))
+    .outerRadius(coxW/2)//or (d => radiusScale(d.count) if you want a coxcomb
     .startAngle((d,i) => angleScale(runningSum(i)))
     .endAngle((d,i) => angleScale(runningSum(i)+d.count));
 
@@ -348,7 +351,7 @@ function renderPanel(index, container){
   //of the top 100 terms for the top topics for now.
 
   let allTokens = [];
-  tokens.forEach(function(val,key){
+  tokens.forEach(function(val){
     allTokens = allTokens.concat(val.map(d=>d.top_term));
   });
 
@@ -453,7 +456,6 @@ function renderPanel(index, container){
     let maxTopTokenProb = 0;
 
     Array.from(topics.keys()).forEach(function(topic,i){
-      let row = [];
       topSharedTokens.forEach(function(token,j){
         let foundProb = tokens.get(topic).find(d=> d.top_term === token);
         let prob = foundProb ? foundProb.top_prob : 0;

@@ -1,0 +1,14 @@
+{
+  "undef":   true,
+  "unused":  true,
+  "eqnull":  true,
+  "freeze":  true,
+  "noarg":   true,
+  "node":    true,
+  "browser": true,
+  "esversion": 6,
+  "globals" : {
+    "d3": true,
+    "dl": true
+  }
+}

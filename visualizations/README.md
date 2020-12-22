@@ -1,5 +1,13 @@
 # Visual Analysis of Simulation Results
 
+This folder contains code for comparing how two runs of our pipeline might look as visualized via a set of representative visualizations, implemented in D3.
+
+To use, spin up a server via your favorite method. i.e.,
+
+```
+python -m http.server 8000
+```
+
 ## Premises
 
 We want to compare two *runs* of a topic modeller, or (equivalently), the *state* of a topic model before and after a particular *action* or *adjustment*. We have done so *numerically* and *holistically* in a different part of the process. But here we want to do so in the context of a one or more static view of a *visualization*. We assume:
@@ -10,19 +18,18 @@ We want to compare two *runs* of a topic modeller, or (equivalently), the *state
 4. The views are **comparable**: we can calculate the difference between two views in a meaningful (ideally metric) way.
 
 ## We instantiate these assumptions by:
-1. Including only the prediction data provided by a single run of topic model in a visualization. So that's the document probability for each topic, and the token probability for each topic. (I might potentially bring in other *a priori* corpus information, like tf.idf values or document raw texts).
+1. Including only the prediction data provided by a single run of topic model in a visualization. So that's the document probability for each topic, and the token probability for each topic.
 2. Mostly covered by the above. But the idea here is that we have a bunch of independent views. The user selects two *runs* and then selects some parameters.
 3. Not including every single token, topic, or text in a view simultaneously, except in the aggregate. E.g., if we are looking at the top tokens in a topic, I might only visualize the top *w* of those tokens. I might only list by name the top *d* documents in a topic. Or the top *t* topics in a corpus.
-4. Computing a variety of the *Jaccard index* between two views. How many texts, tokens, or topics are in common across two particular views? We use this as a **proxy metric** for visual difference. That is, if the Jaccard index is close to 1, then the views are similar from the user's perspective. If it is close to 0, then the views are very different. A viewer might become "lost" if, after a minor change, the view changes completely. For views with important quantitative data, then I will also compute the *L_1 norm* between the views (only for the subset of items that are in the intersection of both views). Ideally I want these metrics to be connected to our prior analyses, rather than do something de novo.
+4. Including our metric information along with each topic run.
 
 ## View Types:
-1. **Topics by text count**. Histogram of how many documents are in each topic, functioning as a corpus overview. Will probably be *unlabeled* (as in TopicCheck), so we can fit all of the topics in there (maybe cap it at *t=100* topics). I was thinking of this as a summarizing component of the view below. A more "traditional" corpus overview might be a spatialization (laying out through t-sne, say), but that a) seems like a lot of work for not much reward b) doesn't line up with our other analyses and c) the question of what makes e.g. one scatterplot "different" from another is an open research question, especially in this case where we'd expect some significant overplotting and complexity.
-2. **Matrix view of texts by topic**. For a subset of topics we might want a *list* of top documents in particular topics. Right now this is a just a list of lists (I could make this a radial layout or something, but none of our metrics care about that particular layout choice). This *could* be a matrix like below, but defining "most important texts" across the whole corpus (in the same way we could define top tokens) seems iffy.
-3. **Matrix view of tokens by topic**. Here I'm specifically thinking of a termite-style matrix of top terms (defined at the *corpus* level, through tf-idf or other standard metrics), and their relevance across a subset of topics.
+1. **Topics by number of texts**. In keeping with the textviz field's preference for radial information, this is presented as a pie chart in additon to a more standard histogram. Only the top *n* topics get their own color, which is preserved across the other views; the rest are just an identical shade of black.
+2. **Matrix view of tokens by topic**. Here I'm specifically thinking of a termite-style matrix of top terms (defined at the *corpus* level, in this case just by how the most popular terms across topic lists), and their score across a subset of topics.
+3. **Table views of tokens and texts by topic**. The texts with the highest scores for each of the top topics, in descending order. Followed by the tokens with the highest scores.
 
 ## Data needed:
 1. **runs_sample** (called *run-data.csv* in the current code): what runs are in this data, and what did we do each run?
 2. **pred_topics_docs_sample.csv** (called *topics-by-texts.csv* in the current code): what are the top docs for each topic, for each run?
 3. **pred_topics_terms_sample.csv** (called *words-by-topics.csv*): what are the top words for each topic, for each run?
 4. **pivoted table of text counts by topic** (called *topics-by-count.csv*): how many documents are in each topic, for each run? Has three columns, *run_id*, *topic_id*, and *count*. I just made this via a pivot in R, but you do you.
-5. CURRENTLY MISSING **subsampled table of token importance by corpus** (currently not implemented): what is some metric score of a token? Since a run can change the number/characteristics of tokens, there unfortunately has to be data for each run. However, this is always going to be bounded by the variable *textLimit*, which is how many tokens we will visualize at once, which is always going to be an integer less than 100 or so (for instance by default it's *5*). So in practice this will not have to be a huge table. Right now I get around the need for this by calculating overlap in top terms amongst topic term lists. That is, the most important words are the ones that show up in the top 100 terms across as many topics as possible. This also ensure the most non-zero entries in the matrix anyway, so fine by me.
