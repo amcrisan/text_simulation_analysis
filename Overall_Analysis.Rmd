@@ -288,6 +288,7 @@ topic_count = docs %>%
   count(name="count")
 
 baseline_topic_count <- baseline_docs %>%
+  filter(assign_ind == 1) %>%
   group_by(run_id,topic_id)%>%
   count(name="count")
   
