@@ -49,7 +49,7 @@ JS<-function(prob_matrix){
         jensen_shannon(x,y,testNA = FALSE, unit = "log2")
       },x = x)
     })
-    
+
     return(tmp)
 }
 
@@ -60,7 +60,7 @@ CS<-function(prob_matrix){
         cosine_dist(x,y,testNA = FALSE)
       },x = x)
     })
-    
+
     return(tmp)
 }
 
@@ -88,7 +88,7 @@ max(tmp_gt$grp_size)
 There are a total of 65 'ground truth' topics in this dataset. They vary in size from `min(tmp_gt$grp_size)` to `max(tmp_gt$grp_size)`. There is a long tail, in the the majority of the documents belong to two topics.
 
 ```{r}
-tmp_gt %>% 
+tmp_gt %>%
   ggplot(aes(x=reorder(category,-grp_size), y = grp_size)) +
   geom_bar(stat="identity")+
   theme_bw()+
@@ -122,19 +122,19 @@ A run here captures the changes to the output for our text analytics pipelines b
 
 ```{r, fig.height=5,fig.width=10 }
 samp_runs<-runs %>%
-  group_by(action_impact,action_type,run_id) %>% 
+  group_by(action_impact,action_type,run_id) %>%
   do(sample_n(.,1)) %>%
   ungroup()
 
 tmp<-baseline_run %>%
-  filter(action_impact != 'metrics') 
+  filter(action_impact != 'metrics')
 
-metric_labs = c("Accuracy Overall","Accuracy Overall - Weighted", "Precision - F1", "Precision - FMI", "Cluster Homogenety","Cluster Completeness","Cluster Variance","Document Shilloutte")
+metric_labs = c("Accuracy Overall","Accuracy Overall - Weighted", "Precision - F1", "Precision - FMI", "Cluster Homogenety","Cluster Completeness","Cluster Variance","Document Silhouette")
 
 runs$metric<-factor(runs$metric,levels = c("accuracy_overall","accuracy_overall_weighted","f1", "fmi", "homogeneity", "completness" ,"v_measure","silhouette_overall"))
 
 names(metric_labs) = levels(runs$metric)
-  
+
 #labeller = labeller(metric=metric_labs)
 runs %>%
   #filter(metric !="silhouette_overall") %>%
@@ -164,7 +164,7 @@ The dataset that we are using has two very large classes and this seems to domin
 
 ### Summarizing Deviation Across Runs
 
-As we move further into the analysis, we focus on runs that deviatate the most and the least from the performance of the baseline run, which simply uses default parameters. 
+As we move further into the analysis, we focus on runs that deviatate the most and the least from the performance of the baseline run, which simply uses default parameters.
 
 ```{r}
 run_summary = c()
@@ -176,7 +176,7 @@ for(val in unique(runs$metric)){
 
   tmp <- round(abs(run_all$metric_score - run_base$metric_score),3)
   #tmp_idx<-order(tmp,decreasing=TRUE)
-  
+
   run_summary<-rbind(run_summary, cbind(run_all$run_id,run_all$action_type,tmp,run_all$metric))
 }
 
@@ -195,7 +195,7 @@ run_act<- runs %>%
   dplyr::select(run_id,action_type,action_details,action_impact) %>%
   distinct()
 
-run_rank<-left_join(run_rank,run_act) %>% arrange(-avg_deviation) 
+run_rank<-left_join(run_rank,run_act) %>% arrange(-avg_deviation)
 
 run_rank
 
@@ -236,14 +236,14 @@ Output the files for these runs to be interactively visualized by the d3 tool so
 ```{r}
 #file names:
 # - topic-by-text.csv = topic_doc
-topic_doc_samp<- topic_doc %>% 
+topic_doc_samp<- topic_doc %>%
   filter(run_id %in% as.character(sample_runs$run_id)) %>%
   filter(top_doc_order <=20)
 
 write.csv(topic_doc_samp, file="./visualizations/data/covid/topics-by-text.csv",quote=FALSE,row.names=FALSE)
 
 # - words-by-topics.csv = topic_term
-topic_term_samp<- topic_term %>% 
+topic_term_samp<- topic_term %>%
   filter(run_id %in% as.character(sample_runs$run_id))
 
 write.csv(topic_term_samp,file="./visualizations/data/covid/words-by-topics.csv",quote=FALSE,row.names=FALSE)
@@ -274,27 +274,27 @@ assign_tree<-function(dat = NULL,run_info=NULL){
     distinct() %>%
     group_by(topic_assigned,gt_topic) %>%
     count()
-  
-  
+
+
   grp_prob<-dat %>%
     filter(run_id == run_info)%>%
     filter(assign_ind == 1) %>%
     group_by(topic_assigned,gt_topic) %>%
     summarise(avg = median(topic_prob))
-  
-  
+
+
   p<-left_join(total_grp_docs, grp_prob) %>%
-    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") + 
+    ggplot(aes(area=n, fill=avg, subgroup=topic_assigned),color="white") +
       geom_treemap()+
       scale_fill_gradient(limits=c(0,1),name="Median Assignment Probability")+
       geom_treemap_subgroup_border(color="white")+
       geom_treemap_text(aes(label=gt_topic), color="black")+
       theme_bw()+
       theme(legend.position="bottom")
-  
+
   return(p)
 }
-  
+
 ```
 
 
@@ -342,7 +342,7 @@ topic_term %>%
   geom_tile() +
   theme_bw()+
   theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0),axis.text.y = element_blank())
-  
+
 ```
 
 ### Per run term similarity
@@ -374,4 +374,3 @@ heatmap(JS_matrix)
 CS_matrix<-CS(prob_matrix)
 heatmap(CS_matrix)
 ```
-
