@@ -1,12 +1,12 @@
 "run_id","action_impact","action_type","metric","metric_score"
-"baseline_run","Default Params","Default Params","accuracy_overall",0.827727598990015
-"baseline_run","Default Params","Default Params","accuracy_overall_weighted",0.661899563318777
-"baseline_run","Default Params","Default Params","f1",0.386249100071994
-"baseline_run","Default Params","Default Params","fmi",0.383293330389942
-"baseline_run","Default Params","Default Params","silhouette_overall",0.0329421776922304
-"baseline_run","Default Params","Default Params","homogeneity",0.287863189182813
-"baseline_run","Default Params","Default Params","completness",0.319060539597704
-"baseline_run","Default Params","Default Params","v_measure",0.302660054684396
+"baseline_run","baseline","baseline","accuracy_overall",0.827727598990015
+"baseline_run","baseline","baseline","accuracy_overall_weighted",0.661899563318777
+"baseline_run","baseline","baseline","f1",0.37390988372093
+"baseline_run","baseline","baseline","fmi",0.383293330389942
+"baseline_run","baseline","baseline","silhouette_overall",0.0329421776922304
+"baseline_run","baseline","baseline","homogeneity",0.287863189182813
+"baseline_run","baseline","baseline","completness",0.319060539597704
+"baseline_run","baseline","baseline","v_measure",0.302660054684396
 "f4b610f9-5bfd-499","prep","Remove All stop terms from default list","accuracy_overall",0.824079908354617
 "f4b610f9-5bfd-499","prep","Remove All stop terms from default list","accuracy_overall_weighted",0.721397379912664
 "f4b610f9-5bfd-499","prep","Remove All stop terms from default list","f1",0.405908798972383
@@ -63,14 +63,22 @@
 "cb92a305-f25a-445","prep","Remove rare words","homogeneity",0.433340312255419
 "cb92a305-f25a-445","prep","Remove rare words","completness",0.249187323920258
 "cb92a305-f25a-445","prep","Remove rare words","v_measure",0.316420631295589
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","accuracy_overall",0.827727598990015
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","accuracy_overall_weighted",0.661899563318777
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","f1",0.385771910524386
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","fmi",0.383293330389942
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","silhouette_overall",0.0329421776922304
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","homogeneity",0.287863189182813
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","completness",0.319060539597704
-"af5c0580-6e98-4c1","prep","Remove ubiqitous words","v_measure",0.302660054684396
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","accuracy_overall",0.827727598990015
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","accuracy_overall_weighted",0.661899563318777
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","f1",0.371259630890521
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","fmi",0.383293330389942
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","silhouette_overall",0.0329421776922304
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","homogeneity",0.287863189182813
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","completness",0.319060539597704
+"e61570d4-a8bb-4a2","prep","Remove ubiqitous words","v_measure",0.302660054684396
+"c7eb2404-009a-416","prep","Remove ubiqitous words","accuracy_overall",0.827727598990015
+"c7eb2404-009a-416","prep","Remove ubiqitous words","accuracy_overall_weighted",0.661899563318777
+"c7eb2404-009a-416","prep","Remove ubiqitous words","f1",0.376727272727273
+"c7eb2404-009a-416","prep","Remove ubiqitous words","fmi",0.383293330389942
+"c7eb2404-009a-416","prep","Remove ubiqitous words","silhouette_overall",0.0329421776922304
+"c7eb2404-009a-416","prep","Remove ubiqitous words","homogeneity",0.287863189182813
+"c7eb2404-009a-416","prep","Remove ubiqitous words","completness",0.319060539597704
+"c7eb2404-009a-416","prep","Remove ubiqitous words","v_measure",0.302660054684396
 "51c60894-0b8e-464","prep","Remove ubiqitous words","accuracy_overall",0.715064449269842
 "51c60894-0b8e-464","prep","Remove ubiqitous words","accuracy_overall_weighted",0.621288209606987
 "51c60894-0b8e-464","prep","Remove ubiqitous words","f1",0.407504539035707
@@ -119,14 +127,6 @@
 "6fe563fe-5294-4d9","model","Change LDA Number of Topics","homogeneity",0.183782382275187
 "6fe563fe-5294-4d9","model","Change LDA Number of Topics","completness",0.603854728613836
 "6fe563fe-5294-4d9","model","Change LDA Number of Topics","v_measure",0.281799470945507
-"fac00626-df7a-495","metrics","Merge clusters together","accuracy_overall",0.782860363768703
-"fac00626-df7a-495","metrics","Merge clusters together","accuracy_overall_weighted",0.607860262008734
-"fac00626-df7a-495","metrics","Merge clusters together","f1",0.390284067517497
-"fac00626-df7a-495","metrics","Merge clusters together","fmi",0.396651997029808
-"fac00626-df7a-495","metrics","Merge clusters together","silhouette_overall",0.0389296971468946
-"fac00626-df7a-495","metrics","Merge clusters together","homogeneity",0.309787639282697
-"fac00626-df7a-495","metrics","Merge clusters together","completness",0.325325891758682
-"fac00626-df7a-495","metrics","Merge clusters together","v_measure",0.317366691401491
 "e353f90b-6400-4ce","metrics","Merge clusters together","accuracy_overall",0.708052174065666
 "e353f90b-6400-4ce","metrics","Merge clusters together","accuracy_overall_weighted",0.64268558951965
 "e353f90b-6400-4ce","metrics","Merge clusters together","f1",0.501175967500535
@@ -135,35 +135,35 @@
 "e353f90b-6400-4ce","metrics","Merge clusters together","homogeneity",0.372021920782335
 "e353f90b-6400-4ce","metrics","Merge clusters together","completness",0.385163885800985
 "e353f90b-6400-4ce","metrics","Merge clusters together","v_measure",0.378478855165659
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","f1",0.390433815350389
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","fmi",0.387681247343506
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","homogeneity",0.299655213629368
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","completness",0.322019815444701
-"4ac5076e-cf5f-498","metrics","Split one cluster apart","v_measure",0.310435234092295
-"41ea901f-c46a-434","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
-"41ea901f-c46a-434","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
-"41ea901f-c46a-434","metrics","Split one cluster apart","f1",0.390677025527192
-"41ea901f-c46a-434","metrics","Split one cluster apart","fmi",0.387681247343506
-"41ea901f-c46a-434","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
-"41ea901f-c46a-434","metrics","Split one cluster apart","homogeneity",0.299655213629368
-"41ea901f-c46a-434","metrics","Split one cluster apart","completness",0.322019815444701
-"41ea901f-c46a-434","metrics","Split one cluster apart","v_measure",0.310435234092295
-"5eb27855-0aed-492","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
-"5eb27855-0aed-492","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
-"5eb27855-0aed-492","metrics","Split one cluster apart","f1",0.39097466247457
-"5eb27855-0aed-492","metrics","Split one cluster apart","fmi",0.387681247343506
-"5eb27855-0aed-492","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
-"5eb27855-0aed-492","metrics","Split one cluster apart","homogeneity",0.299655213629368
-"5eb27855-0aed-492","metrics","Split one cluster apart","completness",0.322019815444701
-"5eb27855-0aed-492","metrics","Split one cluster apart","v_measure",0.310435234092295
-"745cffed-f356-415","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
-"745cffed-f356-415","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
-"745cffed-f356-415","metrics","Split one cluster apart","f1",0.358005453837164
-"745cffed-f356-415","metrics","Split one cluster apart","fmi",0.387681247343506
-"745cffed-f356-415","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
-"745cffed-f356-415","metrics","Split one cluster apart","homogeneity",0.299655213629368
-"745cffed-f356-415","metrics","Split one cluster apart","completness",0.322019815444701
-"745cffed-f356-415","metrics","Split one cluster apart","v_measure",0.310435234092295
+"6e758c9b-a817-460","metrics","Merge clusters together","accuracy_overall",0.782860363768703
+"6e758c9b-a817-460","metrics","Merge clusters together","accuracy_overall_weighted",0.607860262008734
+"6e758c9b-a817-460","metrics","Merge clusters together","f1",0.374453921364677
+"6e758c9b-a817-460","metrics","Merge clusters together","fmi",0.396651997029808
+"6e758c9b-a817-460","metrics","Merge clusters together","silhouette_overall",0.0389296971468946
+"6e758c9b-a817-460","metrics","Merge clusters together","homogeneity",0.309787639282697
+"6e758c9b-a817-460","metrics","Merge clusters together","completness",0.325325891758682
+"6e758c9b-a817-460","metrics","Merge clusters together","v_measure",0.317366691401491
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","f1",0.402006316180568
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","fmi",0.387681247343506
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","homogeneity",0.299655213629368
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","completness",0.322019815444701
+"ca16947f-ba8d-4a5","metrics","Split one cluster apart","v_measure",0.310435234092295
+"50b029ec-6354-4a1","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
+"50b029ec-6354-4a1","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
+"50b029ec-6354-4a1","metrics","Split one cluster apart","f1",0.375659382064808
+"50b029ec-6354-4a1","metrics","Split one cluster apart","fmi",0.387681247343506
+"50b029ec-6354-4a1","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
+"50b029ec-6354-4a1","metrics","Split one cluster apart","homogeneity",0.299655213629368
+"50b029ec-6354-4a1","metrics","Split one cluster apart","completness",0.322019815444701
+"50b029ec-6354-4a1","metrics","Split one cluster apart","v_measure",0.310435234092295
+"acb11ed8-b701-46e","metrics","Split one cluster apart","accuracy_overall",0.805514539710148
+"acb11ed8-b701-46e","metrics","Split one cluster apart","accuracy_overall_weighted",0.649344978165939
+"acb11ed8-b701-46e","metrics","Split one cluster apart","f1",0.402234636871508
+"acb11ed8-b701-46e","metrics","Split one cluster apart","fmi",0.387681247343506
+"acb11ed8-b701-46e","metrics","Split one cluster apart","silhouette_overall",0.0382962945561496
+"acb11ed8-b701-46e","metrics","Split one cluster apart","homogeneity",0.299655213629368
+"acb11ed8-b701-46e","metrics","Split one cluster apart","completness",0.322019815444701
+"acb11ed8-b701-46e","metrics","Split one cluster apart","v_measure",0.310435234092295

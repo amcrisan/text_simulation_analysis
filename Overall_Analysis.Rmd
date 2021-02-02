@@ -283,10 +283,12 @@ write.csv(tmp, file="./visualizations/data/updated/runs_sample.csv",row.names=FA
 # - topic-by-count.csv = get the predicted topic sizes for each run
 topic_count = docs %>%
   filter(run_id %in% as.character(sample_runs$run_id)) %>%
+  filter(assign_ind == 1) %>%
   group_by(run_id,topic_id)%>%
   count(name="count")
 
 baseline_topic_count <- baseline_docs %>%
+  filter(assign_ind == 1) %>%
   group_by(run_id,topic_id)%>%
   count(name="count")
 
